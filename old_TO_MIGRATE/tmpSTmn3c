@@ -1,0 +1,70 @@
+******************************************************************************
+
+MODIS Reprojection Tool (v4.1 March 2009)
+Start Time:  Fri Jan 17 08:03:07 2014
+
+------------------------------------------------------------------
+
+
+Input image and reprojection info
+---------------------------------
+input_filename:          /Users/phoetrymaster/Documents/School/Geography/Thesis/Data/MODIS_KANSAS_2007-2012/2006/MOD13Q1.A2006113.h10v05.005.2008108195003.hdf
+output_filename:         /Users/phoetrymaster/Documents/School/Geography/Thesis/Data/MODIS_KANSAS_2007-2012/reprojected/MOD13Q1.A2006113.h10v05.005.2008108195003.hdf
+input_filetype:          HDF-EOS
+output_filetype:         HDF-EOS
+input_projection_type:   SIN
+input_datum:             WGS84
+output_projection_type:  AEA
+output_datum:            WGS84
+resampling_type:         CC
+input projection parameters:  6371007.18 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 
+output projection parameters: 0.00 0.00 29.50 45.50 -96.00 23.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 
+
+input image corners (lat/lon):
+    UL:  40.00 -104.43 
+    UR:  40.00 -91.38 
+    LL:  30.00 -92.38 
+    LR:  30.00 -80.83 
+
+input image spatial subset corners (lat/lon):
+    UL:  40.00 -104.43 
+    UR:  40.00 -91.38 
+    LL:  30.00 -92.38 
+    LR:  30.00 -80.83 
+
+     band          select   type lines smpls pixsiz      min    max   fill
+  1) 250m 16 days NDVI   1  INT16  4800  4800 231.6564  -2000  10000  -3000
+  2) 250m 16 days EVI   1  INT16  4800  4800 231.6564  -2000  10000  -3000
+  3) 250m 16 days VI Quality   0 UINT16  4800  4800 231.6564      0  65534  65535
+  4) 250m 16 days red reflectance   0  INT16  4800  4800 231.6564      0  10000  -1000
+  5) 250m 16 days NIR reflectance   0  INT16  4800  4800 231.6564      0  10000  -1000
+  6) 250m 16 days blue reflectance   0  INT16  4800  4800 231.6564      0  10000  -1000
+  7) 250m 16 days MIR reflectance   0  INT16  4800  4800 231.6564      0  10000  -1000
+  8) 250m 16 days view zenith angle   0  INT16  4800  4800 231.6564  -9000   9000 -10000
+  9) 250m 16 days sun zenith angle   0  INT16  4800  4800 231.6564  -9000   9000 -10000
+ 10) 250m 16 days relative azimuth angle   0  INT16  4800  4800 231.6564  -3600   3600  -4000
+ 11) 250m 16 days composite day of the year   0  INT16  4800  4800 231.6564      1    366     -1
+ 12) 250m 16 days pixel reliability   0   INT8  4800  4800 231.6564      0      3     -1
+
+
+SINUSOIDAL PROJECTION PARAMETERS:
+
+   Radius of Sphere:     6371007.181000 meters
+   Longitude of Center:     0.000000 degrees
+   False Easting:      0.000000 meters 
+   False Northing:     0.000000 meters 
+
+ALBERS CONICAL EQUAL-AREA PROJECTION PARAMETERS:
+
+   Semi-Major Axis of Ellipsoid:     6378137.000000 meters
+   Semi-Minor Axis of Ellipsoid:     6356752.314245 meters
+   1st Standard Parallel:     29.500000 degrees
+   2nd Standard Parallel:     45.500000 degrees
+   Longitude of Central Meridian:     -96.000000 degrees
+   Latitude  of Origin:     23.000000 degrees
+   False Easting:      0.000000 meters 
+   False Northing:     0.000000 meters 
+
+CCResample : processing band 250m 16 days NDVI
+
+CCResample : processing band 250m 16 days EVI
