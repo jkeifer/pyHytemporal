@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="8970ff08-a5c4-42d6-8914-eec5d0479f35" name="Default" comment="About to refactor whole project...">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/pyhytemporal/classification.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/pyhytemporal/utils.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/old_TO_MIGRATE/build_multiband_image.py" afterPath="$PROJECT_DIR$/old_TO_MIGRATE/build_multiband_image.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/old_TO_MIGRATE/get_incorrect_px_curves.py" afterPath="$PROJECT_DIR$/old_TO_MIGRATE/get_incorrect_px_curves.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/vcs.xml" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
+    <list default="true" id="8970ff08-a5c4-42d6-8914-eec5d0479f35" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="pyHytemporal.iws" />
@@ -347,7 +342,11 @@
       <created>1400174592685</created>
       <updated>1400174592685</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Moving methods to utils and creating object classes for refactor.">
+      <created>1400183177986</created>
+      <updated>1400183177987</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -382,7 +381,8 @@
       <TodoPanelSettings />
     </option>
     <MESSAGE value="About to refactor whole project..." />
-    <option name="LAST_COMMIT_MESSAGE" value="About to refactor whole project..." />
+    <MESSAGE value="Moving methods to utils and creating object classes for refactor." />
+    <option name="LAST_COMMIT_MESSAGE" value="Moving methods to utils and creating object classes for refactor." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
