@@ -5,7 +5,7 @@ import os
 gdal.UseExceptions()
 
 
-class GDAL_Object(object):
+class gdalObject(object):
     """
 
     """
@@ -39,10 +39,10 @@ class GDAL_Object(object):
             self.bands = self.gdal.RasterCount
             band = self.gdal.GetRasterBand(1)
             self.datatype = band.DataType
+            del band
             self.geotransform = self.gdal.GetGeoTransform()
             self.projection = self.gdal.GetProjection()
 
-            band = ""
         else:
             raise Exception("No image is currently open from which the attributes can be read.")
 
@@ -69,10 +69,10 @@ class GDAL_Object(object):
                 raise Exception("Error encountered opening file.")
             else:
                 self.hasParameters = True
-                self.updateattributes()
+                self.updateAttributes()
 
         else:
-            raise Exception("A file has already been opened with is object instance.")
+            raise Exception("A file has already been opened with is object instance. Close with reset=True to reuse.")
 
         return
 
@@ -113,7 +113,7 @@ class GDAL_Object(object):
                     self.gdal.SetProjection(projection)
 
                 self.hasParameters = True
-                self.updateattributes()
+                self.updateAttributes()
 
         return
 
@@ -181,7 +181,33 @@ class GDAL_Object(object):
 
         return
 
-class Signature_Collection(object):
+    def info(self):
+        """
+        Return the properties of the object.
+
+        Required Argument(s):
+            - None
+
+        Optional Argument(s):
+            - None
+
+        Returns:
+            - properties: A dict of all the properties of the object
+        """
+
+        properties = {}
+
+        properties["GDAL object"] = self.gdal
+        properties["Rows"] = self.rows
+        properties["Cols"] = self.cols
+        properties["Number of bands"] = self.bands
+        properties["GDAL Datatype"] = self.datatype
+        properties["Geotransform"] = self.geotransform
+        properties["Projection"] = self.projection
+
+        return properties
+
+class signatureCollection(object):
     """
     An object representing a collection of temporal signature objects.
 
@@ -193,8 +219,22 @@ class Signature_Collection(object):
         - self.remove(): Removes a signature object from the collection.
     """
 
-    def __init__(self):
+    def __init__(self, viName=None):
+        """
+        Initialize the signature collection.
+
+        Required Argument(s):
+            - None
+
+        Optional Argument(s):
+            - viName: The name or type of vegetation index from which the signatures were developed.
+
+        Returns:
+            - Nothing
+        """
+
         self.signatures = []
+        self.viName = viName
 
     def add(self, reffilepath, signaturename=None):
         """
@@ -209,16 +249,18 @@ class Signature_Collection(object):
                 name without the extension will be used.
 
         Returns:
-            - 0
+            - signaturename
+            - newsig.values: A tuple of tuples representing the DOY and measurment for each of the samples in the
+                signature file.
         """
 
         if not signaturename:
             signaturename = os.path.splitext(os.path.basename(reffilepath))[0]
 
-        newsig = Temporal_Signature(reffilepath, signaturename)
+        newsig = temporalSignature(reffilepath, signaturename)
         self.signatures.append(newsig)
 
-        return 0
+        return signaturename, newsig.values
 
     def remove(self, signaturename=None, index=None):
         """
@@ -233,29 +275,40 @@ class Signature_Collection(object):
             - index: the index of the signature in the signature list that is to be removed.
 
         Returns:
-            - 0
+            - removed: A boolean indicating whether or not the list item was removed.
         """
 
-        if signaturename:
-            foundindex = next(i for i in range(0, len(self.signatures)) if self.signatures.name == "signaturename")
+        removed = False
+        toremove = None
+
+        if not signaturename is None:
+            foundindex = [i for i, j in enumerate(self.signatures) if j.name == signaturename][0]
+            print foundindex
             if index:
+                print "1:", index
                 if index == foundindex:
                     toremove = index
+                    print "2:", toremove
                 else:
                     toremove = None
+                    print "3:", toremove
             else:
                 toremove = foundindex
-        elif index:
+                print "4:", toremove
+        elif not index is None:
             toremove = index
+            print "5:", toremove
 
-        if  toremove:
+        if not toremove is None:
+            print "6: removing"
             del self.signatures[toremove]
+            removed = True
         else:
             pass
 
-        return 0
+        return removed
 
-class Temporal_Signature(object):
+class temporalSignature(object):
     """
     This is an object representing a temporal signature of some plant/material.
 
@@ -272,7 +325,7 @@ class Temporal_Signature(object):
     def __init__(self, reffilepath, signaturename):
         """
         Extracts the DOY and VI values to lists, turns the lists to tuples to make them immutable, then adds them as
-        properties to the object along with the name of the plant/material, and a zip of the DOY and VI tuples.
+        properties to the object along with the name of the plant/material, and a tupled zip of the DOY and VI tuples.
 
         Required Argument(s):
             - reffilepath: The path to the .ref file with the signature to be imported.
@@ -297,11 +350,14 @@ class Temporal_Signature(object):
                             vivalues.append(float(vivalue))
                         else:
                             #line is not properly formatted
-                            raise Exception("Reference file is not formatted properly.")
+                            #raise Exception("Reference file is not formatted properly.")
+                            pass
 
-        if daysofyear.sort() != daysofyear:
+        if sorted(daysofyear) != daysofyear:
+            print(sorted(daysofyear))
+            print(daysofyear)
             raise Exception("Error: dates in reference file are not listed sequentially.")
 
         self.daysofyear = tuple(daysofyear)
         self.vivalues = tuple(vivalues)
-        self.values = zip(self.daysofyear, self.vivalues)
+        self.values = tuple(zip(self.daysofyear, self.vivalues))
