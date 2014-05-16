@@ -107,7 +107,7 @@ class gdalObject(object):
             else:
 
                 if geotransform:
-                    self.gdal.SetGeotransform(geotransform)
+                    self.gdal.SetGeoTransform(geotransform)
 
                 if projection:
                     self.gdal.SetProjection(projection)
@@ -141,7 +141,7 @@ class gdalObject(object):
             if not numberofbands:
                 numberofbands = self.bands
 
-            newimage = GDAL_Object()
+            newimage = gdalObject()
             newimage.createNewImage(
                 outfilepath,
                 self.cols,
