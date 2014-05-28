@@ -227,15 +227,8 @@ class gdalObject(object):
             - properties: A dict of all the properties of the object
         """
 
-        properties = {}
-
-        properties["GDAL object"] = self.gdal
-        properties["Rows"] = self.rows
-        properties["Cols"] = self.cols
-        properties["Number of bands"] = self.bands
-        properties["GDAL Datatype"] = self.datatype
-        properties["Geotransform"] = self.geotransform
-        properties["Projection"] = self.projection
+        properties = {"GDAL object": self.gdal, "Rows": self.rows, "Cols": self.cols, "Number of bands": self.bands,
+                      "GDAL Datatype": self.datatype, "Geotransform": self.geotransform, "Projection": self.projection}
 
         return properties
 
@@ -921,7 +914,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     arrays = []
     #print filelist
 
-    u = 0
+    i = 0
     for f, cropval in filelist:
         img = gdal.Open(f, GA_ReadOnly)
         if img is None:
@@ -931,12 +924,11 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
             cols = img.RasterXSize
             band = img.GetRasterBand(1)
             array = band.ReadAsArray(0, 0, cols, rows)
-            array[array > thresh[u]] = 10000
-            #print thresh[u]
+            array[array > thresh[i]] = 10000
             arrays.append((numpy.copy(array), cropval))
             band = ""
             img = ""
-        u += 1
+        i += 1
 
     count = 0
     finals = []
@@ -980,7 +972,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     #Accuracy Assessment
     results = {}
     for string, val in searchstringsvals:
-        dict = {}
+        searchdict = {}
         temparray = numpy.copy(classification)
         temparray[temparray != val] = 0
         correct = temparray.__eq__(croparray)
@@ -990,13 +982,13 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
         for string2, val2 in searchstringsvals:
             temparray2 = numpy.copy(incorrectvals)
             temparray2[temparray2 != val2] = 0
-            dict[string2] = temparray2.sum() / val2
+            searchdict[string2] = temparray2.sum() / val2
 
-        dict[string] = correct.sum()
-        dict["other"] = len([x for y in incorrectvals for x in y if not x in zip(*searchstringsvals)[1] and not x == 0])
-        results[string] = dict.copy()
+        searchdict[string] = correct.sum()
+        searchdict["other"] = len([x for y in incorrectvals for x in y if not x in zip(*searchstringsvals)[1] and not x == 0])
+        results[string] = searchdict.copy()
 
-    dict = {}
+    searchdict = {}
     temparray = numpy.copy(classification)
     temparray[classification == 0] = 1
     temparray[classification != 0] = 0
@@ -1005,20 +997,15 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     for string2, val2 in searchstringsvals:
         temparray2 = numpy.copy(incorrectvals)
         temparray2[temparray2 != val2] = 0
-        dict[string2] = temparray2.sum() / val2
+        searchdict[string2] = temparray2.sum() / val2
 
-    dict["other"] = len([x for y in incorrectvals for x in y if not x in zip(*searchstringsvals)[1] and not x == 0])
-    results["other"] = dict.copy()
+    searchdict["other"] = len([x for y in incorrectvals for x in y if not x in zip(*searchstringsvals)[1] and not x == 0])
+    results["other"] = searchdict.copy()
 
     numpx = 0
     for key, val in results.items():
         for k, v in val.items():
             numpx += v
-
-    #print "\n"
-    #print results
-    #print numpx
-
 
     printstring = ""
     correct = 0
@@ -1035,7 +1022,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
                 correct += pxcount
             vals.append(pxcount)
         printstring = printstring + "{0}\t\t{1}\t{2}\n".format(crop, vals, total)
-        h = h + total
+        h += total
     accuracy = correct / (h * 1.0)
     outstring = ("{0}\n\t\t{1}\trow total\n{2}\n{3}\n\n\n".format(thresh, croporder, printstring, accuracy))
 
