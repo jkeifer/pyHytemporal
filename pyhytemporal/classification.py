@@ -1109,7 +1109,7 @@ def main(searchdir, cropimgpath, searchstringsvals, nodata, outdir=None, outfile
         outds.SetProjection(cropimg.projection)
         outband = outds.GetRasterBand(1)
         outband.WriteArray(classification, 0, 0)
-        outband.SetNoDataValue(-3000)
+        outband.SetNoDataValue(nodata)
         outband.FlushCache()
 
         outband = ""
