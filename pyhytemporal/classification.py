@@ -369,16 +369,16 @@ class temporalSignature(object):
 
         daysofyear, vivalues = [], []
         with open(reffilepath, "r") as f:
-                for line in f:
-                    if not line.startswith("/"):
-                        if len(line) >= 2:
-                            doy, vivalue = line.split(" ")
-                            daysofyear.append(int(doy))
-                            vivalues.append(float(vivalue))
-                        else:
-                            #line is not properly formatted
-                            #raise Exception("Reference file is not formatted properly.")
-                            pass
+            for line in f:
+                if not line.startswith("/"):
+                    if len(line) >= 2:
+                        doy, vivalue = line.split(" ")
+                        daysofyear.append(int(doy))
+                        vivalues.append(float(vivalue))
+                    else:
+                        #line is not properly formatted
+                        #raise Exception("Reference file is not formatted properly.")
+                        pass
 
         if sorted(daysofyear) != daysofyear:
             print(sorted(daysofyear))
@@ -528,8 +528,9 @@ def get_sort_dates_values(vals, threshold=None):
 
 def arithmetic(x, x0, valsf, interpolatedreferencecurve):
     #TODO docstrings
-    return (1.0 / len(valsf) * numpy.sum((valsf[i] - (x[0] * interpolate.splev((x[1] * (i + x[2])), interpolatedreferencecurve)))
-            ** 2 for i in x0)) ** (1.0 / 2.0)
+    return (1.0 / len(valsf) * numpy.sum(
+        (valsf[i] - (x[0] * interpolate.splev((x[1] * (i + x[2])), interpolatedreferencecurve)))
+        ** 2 for i in x0)) ** (1.0 / 2.0)
 
 
 def geometric(x, x0, valsf, interpolatedreferencecurve):
@@ -576,17 +577,18 @@ def process_pixel(bands, bestguess, col, cropname, doyinterval, fitmthd, img, in
 
         doy = st + i2 * doyinterval
 
-        if  doy > 365:
+        if doy > 365:
             doy = 366
-            i2  = 0
-            st  = 366
+            i2 = 0
+            st = 366
 
         valsf[doy] = measured
         i2 += 1
 
     if hasdata:
         bnds = ((0.6, 1.4), (0.6, 1.4), (-10, 10))
-        res, transforms, message = find_fit(valsf, interpolatedCurve, bestguess, fitmthd, bounds=bnds, mean=meantype, threshold=thresh)
+        res, transforms, message = find_fit(valsf, interpolatedCurve, bestguess, fitmthd, bounds=bnds, mean=meantype,
+                                            threshold=thresh)
 
         if __debug__:
             print "\tPixel r{0}, c{1}: {2}: {3}, {4}, {5}".format(row, col, cropname, res, transforms, message)
@@ -624,13 +626,15 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
         #Iterate through each pixel and calculate the fit for each ref curve; write RMSE to array
         if subset:
             for col, row in subset:
-                outarray = process_pixel(img.bands, bestguess, col, signature.name, doyinterval, fitmthd, img.gdal, interpolatedCurve, outarray,
-                                row, startDOY, thresh, ndvalue, meantype=meantype)
+                outarray = process_pixel(img.bands, bestguess, col, signature.name, doyinterval, fitmthd, img.gdal,
+                                         interpolatedCurve, outarray,
+                                         row, startDOY, thresh, ndvalue, meantype=meantype)
         else:
             for row in range(0, img.rows):
                 for col in range(0, img.cols):
-                    outarray = process_pixel(img.bands, bestguess, col, signature.name, doyinterval, fitmthd, img.gdal, interpolatedCurve, outarray,
-                                row, startDOY, thresh, ndvalue, meantype=meantype)
+                    outarray = process_pixel(img.bands, bestguess, col, signature.name, doyinterval, fitmthd, img.gdal,
+                                             interpolatedCurve, outarray,
+                                             row, startDOY, thresh, ndvalue, meantype=meantype)
 
 
 
@@ -642,6 +646,7 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
 
     except Exception as e:
         import traceback
+
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print e
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
@@ -659,7 +664,8 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
 
 
 def phenological_classificaion(imagetoprocess, outputdirectory, createfoldername, signaturecollection, startDOY,
-                               doyinterval, bestguess, threshold=None, ndvalue=-3000, fitmethod=None, subset=None, gdaldrivercode=None,
+                               doyinterval, bestguess, threshold=None, ndvalue=-3000, fitmethod=None, subset=None,
+                               gdaldrivercode=None,
                                meantype=None, workers=4):
     """
     imagepath = "/Users/phoetrymaster/Documents/School/Geography/Thesis/Data/ARC_Testing/ClipTesting/ENVI_1/test_clip_envi_3.dat"
@@ -703,11 +709,12 @@ def phenological_classificaion(imagetoprocess, outputdirectory, createfoldername
         outdir = create_output_dir(outputdirectory, createfoldername)
         print "Outputting files to {0} in {1}\n".format(createfoldername, outputdirectory)
 
-       #Open multi-date image to analyze
+        #Open multi-date image to analyze
         img = gdalObject
         img.open(imagetoprocess)
 
-        print "Input image dimensions are {0} columns by {1} rows and contains {2} bands.".format(img.cols, img.rows, img.bands)
+        print "Input image dimensions are {0} columns by {1} rows and contains {2} bands.".format(img.cols, img.rows,
+                                                                                                  img.bands)
 
         if subset:
             subset = get_px_coords_from_points(img.gdal, subset)
@@ -774,13 +781,13 @@ def load_points(shapefile):
         # Make sure that it is a point
         if geometry.GetGeometryType() != ogr.wkbPoint:
             raise ShapeDataError('This function only accepts point geometry.')
-        # Get pointCoordinates
+            # Get pointCoordinates
         pointCoordinates = geometry.GetX(), geometry.GetY()
         # Append
         points.append(pointCoordinates)
         # Cleanup
         feature.Destroy()
-    # Cleanup
+        # Cleanup
     shapeData.Destroy()
     # Return
     return points
@@ -838,7 +845,7 @@ def validateShapeData(shapeData):
     # Make sure the shapefile exists
     if not shapeData:
         raise ShapeDataError('The shapefile is invalid')
-    # Make sure there is exactly one layer
+        # Make sure there is exactly one layer
     if shapeData.GetLayerCount() != 1:
         raise ShapeDataError('The shapefile must have exactly one layer')
 
@@ -899,6 +906,7 @@ def generate_thresholds(start, step, numberofsteps, lengthofelement):
     #TODO Docstring
 
     from itertools import product
+
     end = numberofsteps * step + start
     thresholdvals = range(start, end, step)
     thresholdlists = []
@@ -909,7 +917,6 @@ def generate_thresholds(start, step, numberofsteps, lengthofelement):
 
 
 def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, thresh, nodata):
-
     #TODO test to ensure thresh length is equal to the number of image files?
 
     arrays = []
@@ -986,7 +993,8 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
             searchdict[string2] = temparray2.sum() / val2
 
         searchdict[string] = correct.sum()
-        searchdict["other"] = len([x for y in incorrectvals for x in y if not x in zip(*searchstringsvals)[1] and not x == 0])
+        searchdict["other"] = len(
+            [x for y in incorrectvals for x in y if not x in zip(*searchstringsvals)[1] and not x == 0])
         results[string] = searchdict.copy()
 
     searchdict = {}
@@ -1000,7 +1008,8 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
         temparray2[temparray2 != val2] = 0
         searchdict[string2] = temparray2.sum() / val2
 
-    searchdict["other"] = len([x for y in incorrectvals for x in y if not x in zip(*searchstringsvals)[1] and not x == 0])
+    searchdict["other"] = len(
+        [x for y in incorrectvals for x in y if not x in zip(*searchstringsvals)[1] and not x == 0])
     results["other"] = searchdict.copy()
 
     numpx = 0
@@ -1031,7 +1040,6 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
 
 
 def main(searchdir, cropimgpath, searchstringsvals, nodata, outdir=None, outfilename=None):
-
     if outdir is None:
         outdir = searchdir
     else:
@@ -1040,7 +1048,6 @@ def main(searchdir, cropimgpath, searchstringsvals, nodata, outdir=None, outfile
     if outfilename is None:
         today = dt.now()
         outfilename = today.strftime("%Y-%m-%d_%H%M%S_") + os.path.splitext(os.path.basename(cropimgpath))[0]
-
 
     outFile = os.path.join(outdir, outfilename + ".tif")
 
@@ -1075,9 +1082,9 @@ def main(searchdir, cropimgpath, searchstringsvals, nodata, outdir=None, outfile
         for thresh in thresholds:
             start = dt.now()
             accuracy, classification, cols, rows, outstring = classify_with_threshold(croparray,
-                                                                                           filelist,
-                                                                                           searchdir, searchstringsvals,
-                                                                                           thresh, nodata)
+                                                                                      filelist,
+                                                                                      searchdir, searchstringsvals,
+                                                                                      thresh, nodata)
             writestring = writestring + outstring
 
             if accuracy > bestacc:
@@ -1127,7 +1134,6 @@ def main(searchdir, cropimgpath, searchstringsvals, nodata, outdir=None, outfile
 
 
 def get_crop_pixel_values(imagepath, locations):
-
     gdal.AllRegister()
     img = gdal.Open(imagepath, GA_ReadOnly)
 
@@ -1157,10 +1163,12 @@ def write_refs_to_txt(cropname, referencevalues, startdoy, doyinterval, outdir, 
     print "Writing pixel curves to output file:"
     print referencevalues
 
+    #TODO: Rewrite this and next function with append on open, and integrate together to reduce redundant code
+
     #output individual pixel curves to file
     with open(os.path.join(outdir, cropname + postfix + "_points.ref"), "w") as f:
         if comment:
-            f.write("//"+comment+"\n\n")
+            f.write("//" + comment + "\n\n")
         point = 1
         for points in referencevalues:
             f.write("\nPoint {0}:\n".format(point))
@@ -1184,7 +1192,7 @@ def write_mean_ref_to_txt(cropname, referencevalues, startdoy, doyinterval, outd
     #output mean pixel values to file
     with open(os.path.join(outdir, cropname + postfix + "_mean.ref"), "w") as f:
         if comment:
-            f.write("//"+comment+"\n\n")
+            f.write("//" + comment + "\n\n")
         meanvals = get_mean_values(referencevalues)
         imgnumber = 0
         st = startdoy
@@ -1215,7 +1223,9 @@ def get_reference_curves(image, refstoget, startdoy, imageinterval, outdir="", f
             refvals = get_crop_pixel_values(image, locs)
             comment = "Generated from {0} by get_crop_pixel_values version 0.1.".format(image)
             write_refs_to_txt(cropname, refvals, startdoy, imageinterval, outdir, comment=comment, postfix=filepostfix)
-            write_mean_ref_to_txt(cropname, refvals, startdoy, imageinterval, outdir, comment=comment, postfix=filepostfix)
+            write_mean_ref_to_txt(cropname, refvals, startdoy, imageinterval, outdir, comment=comment,
+                                  postfix=filepostfix)
+
 
 ########## PROCEDURE ##########
 
