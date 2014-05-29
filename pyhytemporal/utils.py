@@ -1,4 +1,22 @@
 import os
+from math import floor
+from osgeo import ogr
+
+gdal.UseExceptions()
+
+
+########## EXCEPTION CLASSES ##########
+
+
+class ShapeDataError(Exception):
+    """
+    Error for wrong geometry type when loading shapefiles
+    """
+    pass
+
+
+############## FUNCTIONS ##############
+
 
 def find_files(searchdir, ext, recursive=True):
     foundfiles = []
