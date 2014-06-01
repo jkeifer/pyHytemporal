@@ -1,8 +1,9 @@
 import os
 from math import floor
 from osgeo import ogr
+from core import *
 
-gdal.UseExceptions()
+#gdal.UseExceptions()
 
 
 ########## EXCEPTION CLASSES ##########
