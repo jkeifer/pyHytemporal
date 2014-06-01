@@ -321,7 +321,7 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
     print start
     try:
         print "\nProcessing {0}...".format(imagetoprocess)
-        print "Outputting files to {0}\n".format( outputdirectory)
+        print "Outputting files to {0}\n".format(outputdirectory)
 
         #Open multi-date image to analyze
         img = gdalObject()
@@ -336,7 +336,7 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
         processes = []
         for signature in signaturecollection.signatures:
             p = multiprocessing.Process(target=process_reference,
-                                        args=(outdir, signature, img, startDOY, doyinterval, bestguess, ndvalue),
+                                        args=(outputdirectory, signature, img, startDOY, doyinterval, bestguess, ndvalue),
                                         kwargs={subset: subset, fitmthd: fitmethod, meantype: meantype,
                                                 thresh: threshold})
             p.start()
