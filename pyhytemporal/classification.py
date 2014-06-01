@@ -279,7 +279,7 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
             pass
 
 
-def phenological_classificaion(imagetoprocess, outputdirectory, createfoldername, signaturecollection, startDOY,
+def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollection, startDOY,
                                doyinterval, bestguess, threshold=None, ndvalue=-3000, fitmethod=None, subset=None,
                                meantype=None, workers=4):
     """
@@ -321,8 +321,7 @@ def phenological_classificaion(imagetoprocess, outputdirectory, createfoldername
     print start
     try:
         print "\nProcessing {0}...".format(imagetoprocess)
-        outdir = create_output_dir(outputdirectory, createfoldername)
-        print "Outputting files to {0} in {1}\n".format(createfoldername, outputdirectory)
+        print "Outputting files to {0}\n".format( outputdirectory)
 
         #Open multi-date image to analyze
         img = gdalObject()
