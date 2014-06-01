@@ -124,7 +124,8 @@ class gdalObject(object):
 
         return
 
-    def copySchemaToNewImage(self, outfilepath, numberofbands=None, drivername=None, datatype=None):
+    def copySchemaToNewImage(self, outfilepath, numberofbands=None, drivername=None, datatype=None, cols=None, rows=None,
+                             geotransform=None, projection=None):
         """
         Creates a new image using the properties of an existing image which has been loaded into a GDAL_Object.
 
@@ -145,6 +146,18 @@ class gdalObject(object):
         if datatype is None:
             datatype = self.datatype
 
+        if cols is None:
+            cols = self.cols
+
+        if rows is None:
+            rows = self.rows
+
+        if geotransform is None:
+            geotransform = self.geotransform
+
+        if projection is None:
+            projection = self.projection
+
         newimage = None
 
         if not self.hasParameters:
@@ -157,13 +170,13 @@ class gdalObject(object):
             newimage = gdalObject()
             newimage.createNewImage(
                 outfilepath,
-                self.cols,
-                self.rows,
+                cols,
+                rows,
                 numberofbands,
                 datatype,
                 drivername=drivername,
-                geotransform=self.geotransform,
-                projection=self.projection)
+                geotransform=geotransform,
+                projection=projection)
 
         return newimage
 
