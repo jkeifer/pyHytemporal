@@ -222,14 +222,14 @@ def process_pixel(bands, bestguess, col, cropname, doyinterval, fitmthd, img, in
 
 
 def process_reference(outputdir, signature, img, startDOY, doyinterval, bestguess, ndvalue,
-                      meantype=None, drivercode=None, subset=None, fitmthd=None, thresh=None):
+                      meantype=None, subset=None, fitmthd=None, thresh=None):
     #TODO docstrings
 
     try:
         #Create output rasters for each crop type to hold residual values from fit and arrays
         print "Creating {0} output raster...".format(signature.name)
         outfileName = os.path.join(outputdir, signature.name) + ".tif"
-        outfile = img.copySchemaToNewImage(outfileName, numberofbands=1, drivername=drivercode)
+        outfile = img.copySchemaToNewImage(outfileName, numberofbands=1)
         outdataset = outfile.gdal.GetRasterBand(1)
         outarray = numpy.zeros(shape=(outfile.rows, outfile.cols))
         outarray[outarray == 0] = ndvalue
@@ -281,7 +281,6 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
 
 def phenological_classificaion(imagetoprocess, outputdirectory, createfoldername, signaturecollection, startDOY,
                                doyinterval, bestguess, threshold=None, ndvalue=-3000, fitmethod=None, subset=None,
-                               gdaldrivercode=None,
                                meantype=None, workers=4):
     """
     imagepath = "/Users/phoetrymaster/Documents/School/Geography/Thesis/Data/ARC_Testing/ClipTesting/ENVI_1/test_clip_envi_3.dat"
@@ -314,7 +313,7 @@ def phenological_classificaion(imagetoprocess, outputdirectory, createfoldername
                   241: 2301.0, 81: 4070.5, 225: 1858.0, 145: 6228.5, 161: 3296.5, 353: 1372.5, 113: 7035.25}
     }
 
-    sys.exit(phenological_classificaion(imagepath, outdir, newfoldername, refs, drivercode, startDOY, interval, threshold, bestguess, fitmthd, meantype=mean))
+    sys.exit(phenological_classificaion(imagepath, outdir, newfoldername, refs, startDOY, interval, threshold, bestguess, fitmthd, meantype=mean))
     """
     #TODO docstrings
 
@@ -339,8 +338,8 @@ def phenological_classificaion(imagetoprocess, outputdirectory, createfoldername
         for signature in signaturecollection.signatures:
             p = multiprocessing.Process(target=process_reference,
                                         args=(outdir, signature, img, startDOY, doyinterval, bestguess, ndvalue),
-                                        kwargs={drivercode: gdaldrivercode, subset: subset, fitmthd: fitmethod,
-                                                meantype: meantype, thresh: threshold})
+                                        kwargs={subset: subset, fitmthd: fitmethod, meantype: meantype,
+                                                thresh: threshold})
             p.start()
             processes.append(p)
 
