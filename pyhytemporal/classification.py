@@ -193,6 +193,7 @@ def process_pixel(bands, bestguess, col, cropname, doyinterval, fitmthd, img, in
 
     for i in range(0, bands):
         band = img.GetRasterBand(i + 1)
+        print(band.ReadAsArray(col, row, 1, 1))
         measured = int(band.ReadAsArray(col, row, 1, 1))
 
         if measured == ndvalue:
@@ -255,6 +256,7 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
         #Write output array values to file
         print "Writing {0} output file...".format(signature.name)
         outdataset.WriteArray(outarray, 0, 0)
+        outdataset.SetNoDataValue(ndvalue)
 
         print "\nProcessing {0} finished.".format(signature.name)
 
@@ -263,6 +265,10 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print e
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+        try:
+            print(row, col)
+        except:
+            pass
 
     finally:
         print "\nClosing files..."
