@@ -244,15 +244,13 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
             for col, row in subset:
                 outarray = process_pixel(img.bands, bestguess, col, signature.name, doyinterval, fitmthd, img.gdal,
                                          interpolatedCurve, outarray,
-                                         row, startDOY, thresh, ndvalue, meantype=meantype)
+                                         row, startDOY, ndvalue, meantype=meantype, thresh=thresh)
         else:
             for row in range(0, img.rows):
                 for col in range(0, img.cols):
                     outarray = process_pixel(img.bands, bestguess, col, signature.name, doyinterval, fitmthd, img.gdal,
                                              interpolatedCurve, outarray,
-                                             row, startDOY, thresh, ndvalue, meantype=meantype)
-
-
+                                             row, startDOY, ndvalue, meantype=meantype, thresh=thresh)
 
         #Write output array values to file
         print "Writing {0} output file...".format(signature.name)
