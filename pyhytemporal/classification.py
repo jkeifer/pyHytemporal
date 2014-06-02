@@ -262,7 +262,6 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
 
     except Exception as e:
         import traceback
-
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print e
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
@@ -337,8 +336,8 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
         for signature in signaturecollection.signatures:
             p = multiprocessing.Process(target=process_reference,
                                         args=(outputdirectory, signature, img, startDOY, doyinterval, bestguess, ndvalue),
-                                        kwargs={subset: subset, fitmthd: fitmethod, meantype: meantype,
-                                                thresh: threshold})
+                                        kwargs={"subset": subset, "fitmthd": fitmethod, "meantype": meantype,
+                                                "thresh": threshold})
             p.start()
             processes.append(p)
 
@@ -349,7 +348,10 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
         print dt.now() - start
 
     except Exception as e:
+        import traceback
+        exc_type, exc_value, exc_traceback = sys.exc_info()
         print e
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
 
     finally:
         print "\nClosing file..."
