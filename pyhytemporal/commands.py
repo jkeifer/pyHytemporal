@@ -4,6 +4,11 @@ import click
 from utils import *
 from classification import *
 
+@click.group()
+def cli():
+    pass
+
+
 def find_fit_prompt(ctx, value):
     if not value or ctx.resilient_parsing:
         return
@@ -81,5 +86,8 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
                                temporalshift, threshold=threshold, ndvalue=ndvalue, subset=subset, meantype=meantype,
                                workers=numberofprocesses)
 
+cli.add_command(find_fit)
+
+
 if __name__ == '__main__':
-    find_fit()
+    cli()
