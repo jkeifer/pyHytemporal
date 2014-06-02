@@ -213,3 +213,49 @@ def get_px_coords_from_points(raster, shapefile):
         pxcoords.append((x, y))
 
     return pxcoords
+
+
+def change_geotransform(originaltransform, newxmin, newymin):
+    """
+
+    """
+    #TODO Docstring
+
+    newtransform = list(originaltransform)
+
+    newtransform[0] += newtransform[1] * newxmin
+    newtransform[3] += newtransform[5] * newymin
+
+    return tuple(newtransform)
+
+
+def clip_raster_to_extent(inraster, outraster, xmin, ymin, xextent, yextent):
+    """
+
+    """
+    #TODO Docstring
+
+    original = gdalObject()
+    original.open(inraster)
+
+    newgeotransform = change_geotransform(original.geotransform, xmin, ymin)
+
+    outds = original.copySchemaToNewImage(outraster, cols=xextent, rows=yextent, geotransform=newgeotransform)
+
+    for i in range(1, original.bands + 1):
+        band = original.gdal.GetRasterBand(i)
+        outband = outds.gdal.GetRasterBand(i)
+
+        nodatavalue = band.GetNoDataValue()
+        data = band.ReadAsArray(xmin, ymin, xextent, yextent)
+
+        outband.WriteArray(data, 0, 0)
+        outband.SetNoDataValue(nodatavalue)
+        outband.FlushCache()
+
+        del data, outband, band
+
+    original.close()
+    outds.close()
+
+    return outraster
