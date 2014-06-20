@@ -63,6 +63,123 @@ def band_number_to_doy(bandnumber, startDOY, imageryinterval):
     return calcdoy
 
 
+def openImage(infilepath):
+    """
+    Opens a raster file and updates the instance attributes.
+
+    Required Argument(s):
+        - infilepath: The path to the raster to be opened.
+
+    Optional Argument(s):
+        - None
+
+    Returns:
+        - None
+    """
+
+    gdal.AllRegister()
+    image = gdal.Open(infilepath, GA_ReadOnly)
+
+    if image is None:
+        raise Exception("Error encountered opening file.")
+
+    return image
+
+
+def copySchemaToNewImage(gdalPropertiesObject, outfilepath, numberofbands=None, drivername=None, datatype=None,
+                         cols=None, rows=None, geotransform=None, projection=None):
+        """
+        Creates a new image using the properties of an existing image which has been loaded into a gdalPropertiesObject.
+
+        Required Argument(s):
+            - gdalPropertiesObject: A properties object containing all the original image's attributes.
+            - outfilepath: The output path for the new file.
+
+        Optional Argument(s):
+            - numberofbands: If this is not specified, it will use the number of bands in the input image.
+            - drivername: This is the file type for the output specified by GDAL driver name. The default is GeoTIFF.
+            - datatype: The datatype of the pixels in the new image.
+            - cols: The number of columns to use in the new image.
+            - rows: The number of rows to use in the new image.
+            - geotransform: The geotransform to set for the new image.
+            - projection: The projection to set for the new image.
+
+            Any omitted optional arguments, unless otherwise specified, will have a default value set by that property
+            of the copied image.
+
+        Returns:
+            - newimage: gdal image object of the new image.
+        """
+
+        if drivername is None:
+            drivername = "GTiff"
+
+        if datatype is None:
+            datatype = gdalPropertiesObject.datatype
+
+        if cols is None:
+            cols = gdalPropertiesObject.cols
+
+        if rows is None:
+            rows = gdalPropertiesObject.rows
+
+        if geotransform is None:
+            geotransform = gdalPropertiesObject.geotransform
+
+        if projection is None:
+            projection = gdalPropertiesObject.projection
+
+        if not numberofbands:
+            numberofbands = gdalPropertiesObject.bands
+
+        newimage = createNewImage(outfilepath, cols, rows, numberofbands, datatype, drivername=drivername,
+                                  geotransform=geotransform, projection=projection)
+
+        return newimage
+
+
+def createNewImage(outfilepath, cols, rows, bands, datatype,
+                       drivername=None, geotransform=None, projection=None):
+        """
+        Creates a new image file using specifed image properties.
+
+        Required Argument(s):
+            - outfilepath: The output path for the new file.
+            - cols: Number of columns in the output image.
+            - rows: Number of rows in the output image.
+            - bands: Number of bands in the output image.
+            - datatype: The datatype for the bands in the output image.
+
+        Optional Argument(s):
+            - drivername: This is the file type for the output specified by GDAL driver name. The default is GeoTIFF.
+            - geotransform: This is the geotransform for the output image.
+            - projection: This is the projection for the output image.
+
+        Returns:
+            - None
+        """
+
+        if drivername is None:
+            drivername = "GTiff"
+
+        driver = gdal.GetDriverByName(drivername)
+        driver.Register()
+
+        gdalImage = driver.Create(outfilepath, cols, rows, bands, datatype)
+
+        if gdalImage is None:
+            raise Exception("Error encountered creating output file.")
+        else:
+
+            if geotransform:
+                gdalImage.SetGeoTransform(geotransform)
+
+            if projection:
+                gdalImage.SetProjection(projection)
+
+        return gdalImage
+
+
 #############################################
 #      GET PX COORDS FROM A SHAPEFILE       #
 #############################################
@@ -235,6 +352,7 @@ def clip_raster_to_extent(inraster, outraster, xmin, ymin, xextent, yextent):
     """
     #TODO Docstring
 
+    original = gdal.Open(inraster)
     original = gdalObject()
     original.open(inraster)
 
