@@ -9,10 +9,11 @@ def cli():
     pass
 
 
-def find_fit_prompt(ctx, value):
+def find_fit_prompt(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
     ctx.abort()
+
 
 @click.command()
 @click.option('-i', '--image', type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True,
@@ -86,8 +87,37 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
                                temporalshift, threshold=threshold, ndvalue=ndvalue, subset=subset, meantype=meantype,
                                workers=numberofprocesses)
 
-cli.add_command(find_fit)
 
+@click.command()
+@click.option('-d', '--imagedirectory', type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True,
+                                                            resolve_path=True),
+              required=True, help="Path to the directory containing the .hdf image files to be used.")
+@click.option('-n', '--outputimagename', type=click.STRING, default='multidate_image.tif',
+              help="Name of the image to be created with the file extension. Default is 'multidate_image.tif'.")
+@click.option('--vi', type=click.STRING, default="NDVI", help="Name of the VI to be used. Default is NDVI.")
+@click.option('-o', '--outputdir', type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True,
+                                                   readable=True, resolve_path=True),
+              default=None, help="Path to the output directory. Default is to use the directory containing the image.",)
+@click.option('-f', '--outputfoldername', type=click.STRING, default='multidate_image',
+              help="Name of the folder to be created for the output file. Default is 'multidate_image'.")
+@click.option('-N', '--ndvalue', type=click.INT, default=-3000,
+              help="The value for NODATA in the multidate image and output fit images. Default is -3000.")
+@click.option('-D', '--drivercode', type=click.STRING, default='GTiff',
+              help="GDAL driver code for output image format. Default is GeoTIFF. Ensure output name extension is\
+                    correct if using a different format.")
+def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfoldername, vi, drivercode, ndvalue):
+    """
+    Search directory for .HDF MODIS files, get a VI from each .HDF, and build single-date VI images in to a multi-date
+    composite image.
+    """
+
+    build_multiband_image(imagedirectory, outputimagename, outputfoldername, vi, str(drivercode), ndvalue,
+                          outputdir=outputdir)
+
+
+
+cli.add_command(find_fit)
+cli.add_command(build_multidate_image)
 
 if __name__ == '__main__':
     cli()
