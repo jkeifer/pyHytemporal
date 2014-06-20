@@ -82,7 +82,7 @@ class gdalObject(object):
         return
 
     def createNewImage(self, outfilepath, cols, rows, bands, datatype,
-                       drivername="GTiff", geotransform=None, projection=None):
+                       drivername=None, geotransform=None, projection=None):
 
         """
         Creates a new image file using specifed image properties.
@@ -102,6 +102,9 @@ class gdalObject(object):
         Returns:
             - None
         """
+
+        if drivername is None:
+            drivername = "GTiff"
 
         if not self.hasParameters:
             driver = gdal.GetDriverByName(drivername)
@@ -222,6 +225,43 @@ class gdalObject(object):
         """
 
         properties = {"GDAL object": self.gdal, "Rows": self.rows, "Cols": self.cols, "Number of bands": self.bands,
+                      "GDAL Datatype": self.datatype, "Geotransform": self.geotransform, "Projection": self.projection}
+
+        return properties
+
+
+class gdalProperties(object):
+    """
+
+    """
+    #TODO docstrings
+
+    def __init__(self, gdalImage):
+        self.gdal = gdalImage
+        self.rows = gdalImage.RasterYSize
+        self.cols = gdalImage.RasterXSize
+        self.bands = gdalImage.RasterCount
+        band = gdalImage.GetRasterBand(1)
+        self.datatype = band.DataType
+        del band
+        self.geotransform = gdalImage.GetGeoTransform()
+        self.projection = gdalImage.GetProjection()
+
+    def info(self):
+        """
+        Return the properties of the object.
+
+        Required Argument(s):
+            - None
+
+        Optional Argument(s):
+            - None
+
+        Returns:
+            - properties: A dict of all the properties of the object
+        """
+
+        properties = {"Rows": self.rows, "Cols": self.cols, "Number of bands": self.bands,
                       "GDAL Datatype": self.datatype, "Geotransform": self.geotransform, "Projection": self.projection}
 
         return properties
