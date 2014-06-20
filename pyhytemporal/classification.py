@@ -11,7 +11,7 @@ from scipy import optimize
 from utils import *
 from core import *
 
-gdal.UseExceptions()
+#gdal.UseExceptions()
 
 ################ FUNCTIONS ##################
 
@@ -40,7 +40,7 @@ def get_hdf_subdatasets(hdfpath):
     return subdatasets
 
 
-def build_multiband_image(rootDIR, outName, newfoldername, find, drivercode, ndvalue):
+def build_multiband_image(rootDIR, outName, newfoldername, find, drivercode, ndvalue, outputdir=None):
     """
     ##Set Args##
     rootdirectory = "/Users/phoetrymaster/Documents/School/Geography/Thesis/Data/MODIS_KANSAS_2012/"
@@ -59,7 +59,10 @@ def build_multiband_image(rootDIR, outName, newfoldername, find, drivercode, ndv
 
     #TODO docstrings
 
-    outdir = create_output_dir(rootDIR, newfoldername)
+    if outputdir is None:
+        outputdir = rootDIR
+
+    outdir = create_output_dir(outputdir, newfoldername)
     print "\nOutputting files to : {0}".format(outdir)
 
     print "\nFinding HDF files in directory/subfolders: {0}".format(rootDIR)
@@ -83,39 +86,41 @@ def build_multiband_image(rootDIR, outName, newfoldername, find, drivercode, ndv
     #rows, cols, datatype, geotransform, projection = open_image(toprocess[0])
     #print "\tParameters: rows: {0}, cols: {1}, datatype: {2}, projection: {3}.".format(rows, cols, datatype, projection)
 
-    outfile = os.path.join(outdir, outName) + ".tif"
+    outfile = os.path.join(outdir, outName)
     print "\nOutput file is: {0}".format(outfile)
 
     ## Create output file from first file to process ##
-    template = gdalObject()
-    template.open(toprocess[0])
-    outds = template.copySchemaToNewImage(outfile, numberofbands=bands, drivername=drivercode)
-    template.close()
+    template = openImage(toprocess[0])
+    templateproperties = gdalProperties(template)
+    outds = copySchemaToNewImage(templateproperties, outfile, numberofbands=bands, drivername=drivercode)
+    template = ""
     del template
     print "\tCreated output file."
 
     print"\nAdding bands to output file..."
     for i in range(0, bands):
         print "\tProcessing band {0} of {1}...".format(i + 1, bands)
-        image = gdal.Open(toprocess[i])
+        image = openImage(toprocess[i])
         band = image.GetRasterBand(1)
 
-        outband = outds.gdal.GetRasterBand(i + 1)
+        outband = outds.GetRasterBand(i + 1)
 
         print "\t\tReading band data to array..."
-        data = band.ReadAsArray(0, 0, outds.cols, outds.rows)
+        data = band.ReadAsArray(0, 0, templateproperties.cols, templateproperties.rows)
 
         print "\t\tWriting band data to output band..."
         outband.WriteArray(data, 0, 0)
         outband.SetNoDataValue(ndvalue)
         outband.FlushCache()
 
+        outband = ""
         del data, outband
+        band = ""
         image = ""
 
     print "\tFinished adding bands to output file."
 
-    outds.close()
+    outds = ""
     del outds
 
     print "\nProcess completed."
@@ -193,8 +198,14 @@ def process_pixel(bands, bestguess, col, cropname, doyinterval, fitmthd, img, in
 
     for i in range(0, bands):
         band = img.GetRasterBand(i + 1)
-        print(band.ReadAsArray(col, row, 1, 1))
-        measured = int(band.ReadAsArray(col, row, 1, 1))
+        #print(band.ReadAsArray(col, row, 1, 1))
+        j = 0
+        temp = None
+        while (temp == None or temp == numpy.array([[0]])) and j < 1000:
+            temp = band.ReadAsArray(col, row, 1, 1)
+            print(temp, col, row, i, j)
+            j += 1
+        measured = int(temp)
 
         if measured == ndvalue:
             hasdata = False
@@ -703,3 +714,4 @@ def get_reference_curves(image, refstoget, startdoy, imageinterval, outdir="", f
 
 if __name__ == '__main__':
     sys.exit()
+
