@@ -1,11 +1,11 @@
-import numpy as np
+import numpy
 import os
 from osgeo import gdal
 from osgeo.gdalconst import *
 import sys
-from itertools import product
 from datetime import datetime as dt
 
+from itertools import product
 
 def generate_thresholds(start, step, numberofsteps, lengthofelement):
     end = numberofsteps * step + start
@@ -15,7 +15,6 @@ def generate_thresholds(start, step, numberofsteps, lengthofelement):
         thresholdlists.append(thresholdvals)
     for i in product(*thresholdlists):
         yield i
-
 
 def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, thresh, nodata):
 
@@ -36,7 +35,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
             array = band.ReadAsArray(0, 0, cols, rows)
             array[array > thresh[u]] = 10000
             #print thresh[u]
-            arrays.append((np.copy(array), cropval))
+            arrays.append((numpy.copy(array), cropval))
             band = ""
             img = ""
         u += 1
@@ -54,10 +53,10 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
         for i in range(0, len(arrays)):
             if not i == count:
                 lt = array.__lt__(arrays[i][0])
-                ltarrays.append(np.copy(lt))
-                ndarray = np.copy(array)
+                ltarrays.append(numpy.copy(lt))
+                ndarray = numpy.copy(array)
                 ndarray[ndarray != nodata] = 0
-                ndarray = np.rint(ndarray)
+                ndarray = numpy.rint(ndarray)
                 ndarray = ndarray.astype(int)
                 nodataarrays.append(ndarray)
         count += 1
@@ -68,7 +67,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
 
         for i in range(0, len(ltarrays)):
             if not i:
-                allpxbestfit = np.copy(ltarrays[i])
+                allpxbestfit = numpy.copy(ltarrays[i])
             else:
                 allpxbestfit = allpxbestfit.__and__(ltarrays[i])
         finals.append(cropval * allpxbestfit)
@@ -80,7 +79,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     nodataarray = ""
     for ndarray in nodataarrays:
         if nodataarray == "":
-            nodataarray = np.copy(ndarray)
+            nodataarray = numpy.copy(ndarray)
         else:
             nodataarray = nodataarray.__and__(ndarray)
 
@@ -89,7 +88,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     classification = ""
     for final in finals:
         if classification == "":
-            classification = np.copy(final)
+            classification = numpy.copy(final)
         else:
             classification = classification.__or__(final)
     classification = classification.__or__(nodataarray)
@@ -102,14 +101,14 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     results = {}
     for string, val in searchstringsvals:
         dict = {}
-        temparray = np.copy(classification)
+        temparray = numpy.copy(classification)
         temparray[temparray != val] = 0
         correct = temparray.__eq__(croparray)
         incorrect = temparray.__ne__(croparray)
         temparray[temparray == val] = 1
         incorrectvals = incorrect.__mul__(croparray).__mul__(temparray)
         for string2, val2 in searchstringsvals:
-            temparray2 = np.copy(incorrectvals)
+            temparray2 = numpy.copy(incorrectvals)
             temparray2[temparray2 != val2] = 0
             dict[string2] = temparray2.sum() / val2
 
@@ -118,13 +117,13 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
         results[string] = dict.copy()
 
     dict = {}
-    temparray = np.copy(classification)
+    temparray = numpy.copy(classification)
     temparray[classification == 0] = 1
     temparray[classification != 0] = 0
     incorrectvals = temparray.__mul__(croparray)
 
     for string2, val2 in searchstringsvals:
-        temparray2 = np.copy(incorrectvals)
+        temparray2 = numpy.copy(incorrectvals)
         temparray2[temparray2 != val2] = 0
         dict[string2] = temparray2.sum() / val2
 
@@ -161,7 +160,6 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     outstring = ("{0}\n\t\t{1}\trow total\n{2}\n{3}\n\n\n".format(thresh, croporder, printstring, accuracy))
 
     return accuracy, classification, cols, rows, outstring
-
 
 def main(searchdir, cropimgpath, searchstringsvals, nodata, outdir=None, outfilename=None):
 
@@ -260,7 +258,6 @@ def main(searchdir, cropimgpath, searchstringsvals, nodata, outdir=None, outfile
         print "outputted"
 
         return 0
-
 
 if __name__ == '__main__':
 
