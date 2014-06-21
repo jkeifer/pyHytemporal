@@ -48,8 +48,7 @@ def find_fit_prompt(ctx, param, value):
                                                 resolve_path=True), default=None,
               help="Path to a shapefile to clip the raster. If omitted, entire raster extent will be processed.")
 @click.option('-C', '--cliptopixelextent', nargs=4, type=int, default=None,
-              help="Pixel coordinates and number of pixels to clip raster. For example, entering \"2482, 1089, 100, 100\"\
-                    will create a 100px square image going right and down from pixel 2482, 1089 in the original image.")
+              help="Pixel coordinates and number of pixels to clip raster. For example, entering \"2482, 1089, 100, 100\" will create a 100px square image going right and down from pixel 2482, 1089 in the original image.")
 #TODO Add an option to use geographic or pixel extent (done) to clip raster in addition to clip to shape option
 @click.option('-P', '--prompt-mode', is_flag=True, is_eager=True, expose_value=False, callback=find_fit_prompt,
               help="Enable prompt mode. This will prompt you for each of the arguments to the function. Use if you aren't good at the command line.")
@@ -103,8 +102,7 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
 @click.option('-N', '--ndvalue', type=click.INT, default=-3000,
               help="The value for NODATA in the multidate image and output fit images. Default is -3000.")
 @click.option('-D', '--drivercode', type=click.STRING, default='GTiff',
-              help="GDAL driver code for output image format. Default is GeoTIFF. Ensure output name extension is\
-                    correct if using a different format.")
+              help="GDAL driver code for output image format. Default is GeoTIFF. Ensure output name extension is correct if using a different format.")
 def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfoldername, vi, drivercode, ndvalue):
     """
     Search directory for HDF MODIS files, get a VI from each HDF, and build single-date VI images in to a multi-date
