@@ -107,7 +107,7 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
                     correct if using a different format.")
 def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfoldername, vi, drivercode, ndvalue):
     """
-    Search directory for .HDF MODIS files, get a VI from each .HDF, and build single-date VI images in to a multi-date
+    Search directory for HDF MODIS files, get a VI from each HDF, and build single-date VI images in to a multi-date
     composite image.
     """
 
