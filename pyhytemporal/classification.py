@@ -11,7 +11,7 @@ from scipy import optimize
 from utils import *
 from core import *
 
-#gdal.UseExceptions()
+gdal.UseExceptions()
 
 ################ FUNCTIONS ##################
 
