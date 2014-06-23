@@ -112,10 +112,40 @@ def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfold
     build_multiband_image(imagedirectory, outputimagename, outputfoldername, vi, str(drivercode), ndvalue,
                           outputdir=outputdir)
 
+@click.command()
+@click.option('-i', '--image', type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True,
+                                               resolve_path=True),
+              required=True, help="Path to the multidate image file.")
+@click.option('-s', '--shapefiledirectory', type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True,
+                                                            resolve_path=True),
+              required=True, help="Path to the directory containing point .shp files for each of the classes.")
+@click.option('-o', '--outputdir', type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True,
+                                                   readable=True, resolve_path=True), required=True,
+              default=None, help="Path to the output directory. Default is to use the directory containing the image.",)
+@click.option('-s', '--startDOY', type=click.INT, help="The start DOY for the multidate image.", required=True)
+@click.option('-d', '-DOYinterval', type=click.INT, help="The interval of the imagery in the multidate image.",
+              required=True)
+@click.option('-l', '--filelabel', type=click.STRING, default="",
+              help="A label to postfix on each of the .ref file names")
+def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputdir, filelabel):
+    """
+    Extracts temporal signatures for a set of point geometry shapefiles in a specified directory and outputs them to a
+    set of .ref files in an output directory.
+    """
+
+    if outputdir is None:
+        outputdir = os.path.dirname(image)
+
+    shapefiles = find_files(shapefiledirectory, ".shp", recursive=False)
+
+    #TODO: Need a method to find only valid shapefiles in the directory
+
+    get_reference_curves(image, shapefiles, startdoy, doyinterval, outdir=outputdir, filepostfix=filelabel)
 
 
 cli.add_command(find_fit)
 cli.add_command(build_multidate_image)
+cli.add_command(extract_signatures)
 
 if __name__ == '__main__':
     cli()
