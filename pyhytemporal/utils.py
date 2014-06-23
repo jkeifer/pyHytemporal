@@ -63,6 +63,11 @@ def band_number_to_doy(bandnumber, startDOY, imageryinterval):
     return calcdoy
 
 
+#############################################
+#              IMAGE FUNCTIONS              #
+#############################################
+
+
 def openImage(infilepath):
     """
     Opens a raster file and updates the instance attributes.
