@@ -116,12 +116,12 @@ def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfold
 @click.option('-i', '--image', type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True,
                                                resolve_path=True),
               required=True, help="Path to the multidate image file.")
-@click.option('-s', '--shapefiledirectory', type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True,
+@click.option('-v', '--shapefiledirectory', type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True,
                                                             resolve_path=True),
               required=True, help="Path to the directory containing point .shp files for each of the classes.")
 @click.option('-o', '--outputdir', type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True,
                                                    readable=True, resolve_path=True),
-              default=None, help="Path to the output directory. Default is to use the directory containing the image.",)
+              default=None, help="Path to the output directory. Default is to use the directory containing the image.")
 @click.option('-s', '--startDOY', type=click.INT, help="The start DOY for the multidate image.", required=True)
 @click.option('-d', '-DOYinterval', type=click.INT, help="The interval of the imagery in the multidate image.",
               required=True)
