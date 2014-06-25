@@ -4,6 +4,16 @@ import click
 from utils import *
 from classification import *
 
+
+def validate_value(ctx, param, value):
+    """
+    Check to make sure the arg is fomatted correctly...
+    """
+
+    #TODO: Write this function
+
+    return True
+
 @click.group()
 def cli():
     pass
@@ -42,7 +52,7 @@ def find_fit_prompt(ctx, param, value):
               default=None, help="A shapefile of points for each pixel to be fit. Used to eliminate mixels. Default is none.")
 @click.option('-m', '--meantype', type=click.Choice(['arithmetic', 'geometric']), default='arithmetic',
               help="The type of mean (arithmetic or geometric) used in the RMSE fitting of the signatures to the pixels. Default is arithmetic.")
-@click.option('-n', '--numberofprocesses', type=click.INT, default=4,
+@click.option('-p', '--numberofprocesses', type=click.INT, default=4,
               help="The max number of processes to spawn at any time. Default is 4. Set lower or higher depending on number of processors/cores in your machine.")
 @click.option('-c', '--cliptoshapeextent', type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True,
                                                 resolve_path=True), default=None,
@@ -141,6 +151,33 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
     #TODO: Need a method to find only valid shapefiles in the directory
 
     get_reference_curves(image, shapefiles, startdoy, doyinterval, outdir=outputdir, filepostfix=filelabel)
+
+@click.command()
+@click.option('-i', '--fitimagedirectory', type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True,
+                                                   readable=True, resolve_path=True),
+              required=True, help="Path to the directory containing the crop fit images.")
+@click.option('-c', '--cropimage', type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True,
+                                               resolve_path=True),
+              required=True, help="Path to the crop ground truth image file.")
+@click.option('-o', '--outputdirectory', type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True,
+                                                   readable=True, resolve_path=True),
+              default=None, help="Path to the output directory. Default is to use the directory containing the image.")
+@click.option('-v', '--valueofcropinimage', multiple=True, nargs=2, callback=validate_value,
+              help="The class name and its value in the crop image used for the accuracy assessment. E.g. \"Corn 1\"")
+@click.option('-n', '--ndvalue', type=click.INT, default=-3000,
+              help="The value for NODATA in the multidate image and output fit images. Default is -3000.")
+@click.option('-O', '--outputimagename', type=click.STRING, default=None,
+              help="Name of the image to be created with the file extension. Default is the date and crop image name.")
+def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimagename, valueofcropinimage):
+    """
+    Classify a multidate image and assess the accuracy of said classification.
+    """
+
+    if outputdirectory is None:
+        outputdirectory = os.path.dirname(fitimagedirectory)
+
+    classify_and_assess_accuracy(fitimagedirectory, cropimage, valueofcropinimage, ndvalue,
+                                 outdir=outputdirectory, outfilename=outputimagename)
 
 
 cli.add_command(find_fit)
