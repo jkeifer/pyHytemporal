@@ -133,9 +133,9 @@ def clip_raster_to_extent(inraster, outraster, xmin, ymin, xextent, yextent):
 
     newgeotransform = change_geotransform(originalproperties.geotransform, xmin, ymin)
 
-    outds = copySchemaToNewImage(outraster, cols=xextent, rows=yextent, geotransform=newgeotransform)
+    outds = copySchemaToNewImage(originalproperties, outraster, cols=xextent, rows=yextent, geotransform=newgeotransform)
 
-    for i in range(1, original.bands + 1):
+    for i in range(1, originalproperties.bands + 1):
         band = original.GetRasterBand(i)
         outband = outds.GetRasterBand(i)
 
