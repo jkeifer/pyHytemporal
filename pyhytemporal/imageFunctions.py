@@ -99,7 +99,7 @@ def copySchemaToNewImage(gdalPropertiesObject, outfilepath, numberofbands=None, 
         return newimage
 
 
-def openImage(infilepath):
+def openImage(infilepath, readonly=True):
     """
     Opens a raster file and updates the instance attributes.
 
@@ -114,7 +114,12 @@ def openImage(infilepath):
     """
 
     gdal.AllRegister()
-    image = gdal.Open(infilepath, GA_ReadOnly)
+    if readonly is True:
+        image = gdal.Open(infilepath, GA_ReadOnly)
+    elif readonly is False:
+        image = gdal.Open(infilepath)
+    else:
+        raise Exception("Error: the read status could not be be determined.")
 
     if image is None:
         raise Exception("Error encountered opening file.") #TODO convert to classed exception
