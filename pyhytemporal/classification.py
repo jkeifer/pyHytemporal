@@ -1,15 +1,21 @@
 import os
 import sys
 import multiprocessing
-import numpy
 from math import floor
 from datetime import datetime as dt
+
+import numpy
 from osgeo import gdal
 from osgeo.gdalconst import *
 from scipy import interpolate
 from scipy import optimize
+
+from imageFunctions import *
+from vectorFunctions import get_px_coords_from_points
 from utils import *
 from core import *
+
+lock = multiprocessing.Lock()
 
 #gdal.UseExceptions()
 
@@ -189,23 +195,30 @@ def find_fit(valsf, interpolatedreferencecurve, bestguess, fitmethod=None, bound
     return res.fun, res.x, res.message
 
 
-def process_pixel(bands, bestguess, col, cropname, doyinterval, fitmthd, img, interpolatedCurve, outarray, row,
+def process_pixel(bands, bestguess, col, cropname, doyinterval, fitmthd, array, interpolatedCurve, outarray, row,
                   startDOY, ndvalue, meantype=None, thresh=None):
     #TODO docstrings
 
     valsf = {}
     hasdata = True
 
-    for i in range(0, bands):
-        band = img.GetRasterBand(i + 1)
-        #print(band.ReadAsArray(col, row, 1, 1))
-        j = 0
-        temp = None
-        while (temp == None or temp == numpy.array([[0]])) and j < 1000:
-            temp = band.ReadAsArray(col, row, 1, 1)
-            print(temp, col, row, i, j)
-            j += 1
-        measured = int(temp)
+    pixel = array[col, row]
+
+    for i in range(pixel.size):
+        measured = pixel[i]
+
+    #for i in range(0, bands):
+    #    band = img.GetRasterBand(i + 1)
+    #    print(band.ReadAsArray(col, row, 1, 1))
+    #    #j = 0
+    #    #temp = None
+    #    #while (temp == None or temp == numpy.array([[0]])) and j < 1000:
+    #    lock.acquire()
+    #    temp = band.ReadAsArray(col, row, 1, 1)
+    #    lock.release()
+        print(measured, col, row, i)
+    #    #j += 1
+    #    measured = int(temp)
 
         if measured == ndvalue:
             hasdata = False
@@ -233,7 +246,7 @@ def process_pixel(bands, bestguess, col, cropname, doyinterval, fitmthd, img, in
     return outarray
 
 
-def process_reference(outputdir, signature, img, startDOY, doyinterval, bestguess, ndvalue,
+def process_reference(outputdir, signature, array, imageproperties, startDOY, doyinterval, bestguess, ndvalue,
                       meantype=None, subset=None, fitmthd=None, thresh=None):
     #TODO docstrings
 
@@ -241,9 +254,9 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
         #Create output rasters for each crop type to hold residual values from fit and arrays
         print "Creating {0} output raster...".format(signature.name)
         outfileName = os.path.join(outputdir, signature.name) + ".tif"
-        outfile = img.copySchemaToNewImage(outfileName, numberofbands=1)
-        outdataset = outfile.gdal.GetRasterBand(1)
-        outarray = numpy.zeros(shape=(outfile.rows, outfile.cols))
+        outfile = copySchemaToNewImage(imageproperties, outfileName, numberofbands=1)
+        outdataset = outfile.GetRasterBand(1)
+        outarray = numpy.zeros(shape=(imageproperties.rows, imageproperties.cols))
         outarray[outarray == 0] = ndvalue
         print "Created {0} raster.".format(signature.name)
 
@@ -254,14 +267,14 @@ def process_reference(outputdir, signature, img, startDOY, doyinterval, bestgues
         #Iterate through each pixel and calculate the fit for each ref curve; write RMSE to array
         if subset:
             for col, row in subset:
-                outarray = process_pixel(img.bands, bestguess, col, signature.name, doyinterval, fitmthd, img.gdal,
-                                         interpolatedCurve, outarray,
+                outarray = process_pixel(imageproperties.bands, bestguess, col, signature.name, doyinterval, fitmthd,
+                                         array, interpolatedCurve, outarray,
                                          row, startDOY, ndvalue, meantype=meantype, thresh=thresh)
         else:
-            for row in range(0, img.rows):
-                for col in range(0, img.cols):
-                    outarray = process_pixel(img.bands, bestguess, col, signature.name, doyinterval, fitmthd, img.gdal,
-                                             interpolatedCurve, outarray,
+            for row in range(0, imageproperties.rows):
+                for col in range(0, imageproperties.cols):
+                    outarray = process_pixel(imageproperties.bands, bestguess, col, signature.name, doyinterval,
+                                             fitmthd, array, interpolatedCurve, outarray,
                                              row, startDOY, ndvalue, meantype=meantype, thresh=thresh)
 
         #Write output array values to file
@@ -338,11 +351,15 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
         print "Outputting files to {0}\n".format(outputdirectory)
 
         #Open multi-date image to analyze
-        img = gdalObject()
-        img.open(imagetoprocess)
+        image = openImage(imagetoprocess)
+        imageproperties = gdalProperties(image)
 
-        print "Input image dimensions are {0} columns by {1} rows and contains {2} bands.".format(img.cols, img.rows,
-                                                                                                  img.bands)
+        print "Input image dimensions are {0} columns by {1} rows and contains {2} bands.".format(imageproperties.cols,
+                                                                                                  imageproperties.rows,
+                                                                                                  imageproperties.bands)
+
+        array = read_image_into_array(image)
+        array = array.transpose(1, 2, 0)
 
         if subset:
             subset = get_px_coords_from_points(imagetoprocess, subset)
@@ -350,7 +367,8 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
         processes = []
         for signature in signaturecollection.signatures:
             p = multiprocessing.Process(target=process_reference,
-                                        args=(outputdirectory, signature, img, startDOY, doyinterval, bestguess, ndvalue),
+                                        args=(outputdirectory, signature, array, imageproperties, startDOY, doyinterval,
+                                              bestguess, ndvalue),
                                         kwargs={"subset": subset, "fitmthd": fitmethod, "meantype": meantype,
                                                 "thresh": threshold})
             p.start()
@@ -359,6 +377,7 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
             if len(processes) == workers:
                 for p in processes:
                     p.join()
+                    processes.remove(p)
 
         print dt.now() - start
 
@@ -371,7 +390,7 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
     finally:
         print "\nClosing file..."
         try:
-            img = None
+            image = None
         except:
             pass
 
