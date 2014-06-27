@@ -1,7 +1,9 @@
 import os
 import sys
+import warnings
 from osgeo import gdal
 from osgeo.gdalconst import *
+from utils import band_number_to_doy
 
 gdal.UseExceptions()
 
@@ -236,7 +238,7 @@ class gdalProperties(object):
     """
     #TODO docstrings
 
-    def __init__(self, gdalImage):
+    def __init__(self, gdalImage, startdoy=None, imageinterval=None):
         self.gdal = gdalImage
         self.rows = gdalImage.RasterYSize
         self.cols = gdalImage.RasterXSize
@@ -246,6 +248,8 @@ class gdalProperties(object):
         del band
         self.geotransform = gdalImage.GetGeoTransform()
         self.projection = gdalImage.GetProjection()
+        self.startdoy = startdoy
+        self.imageinterval = imageinterval
 
     def info(self):
         """
@@ -262,7 +266,8 @@ class gdalProperties(object):
         """
 
         properties = {"Rows": self.rows, "Cols": self.cols, "Number of bands": self.bands,
-                      "GDAL Datatype": self.datatype, "Geotransform": self.geotransform, "Projection": self.projection}
+                      "GDAL Datatype": self.datatype, "Geotransform": self.geotransform, "Projection": self.projection,
+                      "Start Day-of-year": self.startdoy, "Image Interval (days)": self.imageinterval}
 
         return properties
 
@@ -410,8 +415,8 @@ class temporalSignature(object):
                         daysofyear.append(int(doy))
                         vivalues.append(float(vivalue))
                     else:
-                        #line is not properly formatted
-                        #raise Exception("Reference file is not formatted properly.")
+                        # line is not properly formatted
+                        # raise Exception("Reference file is not formatted properly.")
                         pass
 
         if sorted(daysofyear) != daysofyear:
@@ -424,5 +429,47 @@ class temporalSignature(object):
         self.values = tuple(zip(self.daysofyear, self.vivalues))
 
 
+class pixel(object):
+    def __init__(self, row, col, values=None, bandDOYs=None, classificationclass=None, actualclass=None, color=None):
+        self.row = row  # The row of the pixel in the classified image
+        self.col = col  # The column of the pixel in the classified image
+        self.values = values  # List of the pixel's values from each band, ordered increasing by band
+        self.bandDOYs = bandDOYs  # List of the DOY corresponding to each of the bands in the image
+        self.classificationclass = classificationclass  # The assigned class in the classified image
+        self.actualclass = actualclass  # The actual (from ground truth) class of the pixel
+        self.color = color  # The color to use to plot or otherwise represent this pixel
+
+    def get_pixel_values(self, gdalImage, startDOY=None, imageryinterval=None):
+        if self.values is None:
+            bands = gdalImage.RasterCount
+
+            if self.bandDOYs is None:
+                if startDOY is None or imageryinterval is None:
+                        warnings.warn("Band DOYs cannot be calculated as startDOY and/or imageryinterval were/was omitted.")
+                else:
+                    self.get_bandDOYs(bands, startDOY, imageryinterval)
+
+            self.values = []
+            for bandnumber in range(1, bands + 1):
+                band = gdalImage.GetRasterBand(bandnumber)
+                self.values.append(band.ReadAsArray(self.col, self.row, 1, 1))
+
+    def get_bandDOYs(self, numberofbands, startDOY, imageryinterval, force=None):
+        if self.bandDOYs is None or force == True:
+            self.bandDOYs = []
+            for bandnumber in range(1, numberofbands + 1):
+                self.bandDOYs.append(band_number_to_doy(bandnumber, startDOY, imageryinterval))
+        else:
+            warnings.warn("Band DOYs already exist. Use force tag to overwrite.")
+
 if __name__ == '__main__':
     sys.exit()
+
+
+class ShapeDataError(Exception):
+    """
+    Error for wrong geometry type when loading shapefiles
+    """
+    pass
+
+
