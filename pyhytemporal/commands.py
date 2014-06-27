@@ -1,8 +1,9 @@
 import os
-import sys
 import click
+from imageFunctions import clip_raster_to_extent
 from utils import *
 from classification import *
+from core import signatureCollection
 
 
 def validate_value(ctx, param, value):
@@ -122,6 +123,7 @@ def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfold
     build_multiband_image(imagedirectory, outputimagename, outputfoldername, vi, str(drivercode), ndvalue,
                           outputdir=outputdir)
 
+
 @click.command()
 @click.option('-i', '--image', type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True,
                                                resolve_path=True),
@@ -151,6 +153,7 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
     #TODO: Need a method to find only valid shapefiles in the directory
 
     get_reference_curves(image, shapefiles, startdoy, doyinterval, outdir=outputdir, filepostfix=filelabel)
+
 
 @click.command()
 @click.option('-i', '--fitimagedirectory', type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True,
