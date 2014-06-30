@@ -206,19 +206,7 @@ def process_pixel(bands, bestguess, col, cropname, doyinterval, fitmthd, array, 
 
     for i in range(pixel.size):
         measured = pixel[i]
-
-    #for i in range(0, bands):
-    #    band = img.GetRasterBand(i + 1)
-    #    print(band.ReadAsArray(col, row, 1, 1))
-    #    #j = 0
-    #    #temp = None
-    #    #while (temp == None or temp == numpy.array([[0]])) and j < 1000:
-    #    lock.acquire()
-    #    temp = band.ReadAsArray(col, row, 1, 1)
-    #    lock.release()
-        print(measured, col, row, i)
-    #    #j += 1
-    #    measured = int(temp)
+        print(measured, col, row, i + 1)
 
         if measured == ndvalue:
             hasdata = False
@@ -388,6 +376,7 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
 
     finally:
+        print dt.now() - start
         print "\nClosing file..."
         try:
             image = None
@@ -420,18 +409,20 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     arrays = []
     #print filelist
 
-    i = 0
-    for f, cropval in filelist:
-        img = gdal.Open(f, GA_ReadOnly)
+    i = 0  # Track the iterations to set the thresholds for each image
+    for imagefile, cropval in filelist:
+        img = openImage(imagefile)
+        #TODO Convert to new properties object and refactor into smaller, testable methods...
         if img is None:
-            raise Exception("Could not open: {0}".format(os.path.join(searchdir, f)))
+            raise Exception("Could not open: {0}".format(os.path.join(searchdir, imagefile)))
         else:
             rows = img.RasterYSize
             cols = img.RasterXSize
             band = img.GetRasterBand(1)
             array = band.ReadAsArray(0, 0, cols, rows)
-            array[array > thresh[i]] = 10000
-            arrays.append((numpy.copy(array), cropval))
+            array[array > thresh[i]] = 10000  # Make all values in the array greater than the thresh equal 10000
+            arrays.append((numpy.copy(array), cropval))  # Copy the array into a list
+            del array
             band = ""
             img = ""
         i += 1
@@ -442,7 +433,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     for array, cropval in arrays:
         ltarrays = []
         nodataarrays = []
-        for i in range(0, len(arrays)):
+        for i in range(len(arrays)):
             if not i == count:
                 lt = array.__lt__(arrays[i][0])
                 ltarrays.append(numpy.copy(lt))
@@ -453,7 +444,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
                 nodataarrays.append(ndarray)
         count += 1
 
-        for i in range(0, len(ltarrays)):
+        for i in range(len(ltarrays)):
             if not i:
                 allpxbestfit = numpy.copy(ltarrays[i])
             else:
@@ -537,7 +528,12 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     return accuracy, classification, cols, rows, outstring
 
 
-def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, nodata, outdir=None, outfilename=None):
+def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, nodata, threshstart=500, threshstep=100,
+                                 threshstepcount=10, outdir=None, outfilename=None):
+    """
+    """
+    #TODO Docstring
+
     if outdir is None:
         outdir = searchdir
     else:
@@ -552,9 +548,7 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
     accuracyreport = os.path.join(outdir, outfilename + ".txt")
 
     try:
-        gdal.AllRegister()
         #np.set_printoptions(threshold=np.nan)
-
         #Crop image is constant for all iterations
         cropimg = gdalObject()
         cropimg.open(cropimgpath)
@@ -572,7 +566,7 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
                     if string in f:
                         filelist.append((os.path.join(searchdir, f), val))
 
-        thresholds = generate_thresholds(600, 100, 10, len(filelist))
+        thresholds = generate_thresholds(threshstart, threshstep, threshstepcount, len(filelist))
 
         writestring = ""
         bestacc = 0
