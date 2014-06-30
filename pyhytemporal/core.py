@@ -7,6 +7,17 @@ from utils import band_number_to_doy
 
 gdal.UseExceptions()
 
+
+########## ERROR  CLASSES #############
+
+
+class ShapeDataError(Exception):
+    """
+    Error for wrong geometry type when loading shapefiles
+    """
+    pass
+
+
 ########## OBJECT CLASSES #############
 
 
@@ -464,12 +475,5 @@ class pixel(object):
 
 if __name__ == '__main__':
     sys.exit()
-
-
-class ShapeDataError(Exception):
-    """
-    Error for wrong geometry type when loading shapefiles
-    """
-    pass
 
 
