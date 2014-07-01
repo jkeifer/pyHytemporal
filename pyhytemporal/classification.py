@@ -202,11 +202,13 @@ def process_pixel(bands, bestguess, col, cropname, doyinterval, fitmthd, array, 
     valsf = {}
     hasdata = True
 
-    pixel = array[col, row]
+    pixel = array[row, col]
+    #print pixel
+    #print pixel.size
 
     for i in range(pixel.size):
         measured = pixel[i]
-        print(measured, col, row, i + 1)
+        #print(measured, col, row, i + 1)
 
         if measured == ndvalue:
             hasdata = False
@@ -416,10 +418,8 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
         if img is None:
             raise Exception("Could not open: {0}".format(os.path.join(searchdir, imagefile)))
         else:
-            rows = img.RasterYSize
-            cols = img.RasterXSize
             band = img.GetRasterBand(1)
-            array = band.ReadAsArray(0, 0, cols, rows)
+            array = band.ReadAsArray(0, 0, img.RasterXSize, img.RasterYSize)
             array[array > thresh[i]] = 10000  # Make all values in the array greater than the thresh equal 10000
             arrays.append((numpy.copy(array), cropval))  # Copy the array into a list
             del array
@@ -525,7 +525,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     accuracy = correct / (h * 1.0)
     outstring = ("{0}\n\t\t{1}\trow total\n{2}\n{3}\n\n\n".format(thresh, croporder, printstring, accuracy))
 
-    return accuracy, classification, cols, rows, outstring
+    return accuracy, classification, outstring
 
 
 def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, nodata, threshstart=500, threshstep=100,
@@ -566,6 +566,8 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
                     if string in f:
                         filelist.append((os.path.join(searchdir, f), val))
 
+        print filelist
+
         thresholds = generate_thresholds(threshstart, threshstep, threshstepcount, len(filelist))
 
         writestring = ""
@@ -573,7 +575,7 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
         bestthresh = ""
         for thresh in thresholds:
             start = dt.now()
-            accuracy, classification, cols, rows, outstring = classify_with_threshold(croparray,
+            accuracy, classification, outstring = classify_with_threshold(croparray,
                                                                                       filelist,
                                                                                       searchdir, searchstringsvals,
                                                                                       thresh, nodata)
@@ -597,14 +599,14 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
 
         print "\n", bestthresh, bestacc
 
-        accuracy, classification, cols, rows, outstring = classify_with_threshold(croparray, filelist, searchdir,
+        accuracy, classification, outstring = classify_with_threshold(croparray, filelist, searchdir,
                                                                                   searchstringsvals, bestthresh,
                                                                                   nodata)
 
         driver = gdal.GetDriverByName("ENVI")
         driver.Register()
 
-        outds = driver.Create(outFile, cols, rows, 1, GDT_Int16)
+        outds = driver.Create(outFile, cropimg.cols, cropimg.rows, 1, GDT_Int16)
         outds.SetGeoTransform(cropimg.geotransform)
         outds.SetProjection(cropimg.projection)
         outband = outds.GetRasterBand(1)
