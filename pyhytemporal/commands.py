@@ -12,8 +12,11 @@ def validate_value(ctx, param, value):
     """
 
     #TODO: Write this function
+    toreturn = []
+    for v in value:
+        toreturn.append((str(v[0]), int(v[1])))
 
-    return True
+    return toreturn
 
 @click.group()
 def cli():
@@ -135,7 +138,7 @@ def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfold
                                                    readable=True, resolve_path=True),
               default=None, help="Path to the output directory. Default is to use the directory containing the image.")
 @click.option('-s', '--startDOY', type=click.INT, help="The start DOY for the multidate image.", required=True)
-@click.option('-d', '-DOYinterval', type=click.INT, help="The interval of the imagery in the multidate image.",
+@click.option('-d', '--DOYinterval', type=click.INT, help="The interval of the imagery in the multidate image.",
               required=True)
 @click.option('-l', '--filelabel', type=click.STRING, default="",
               help="A label to postfix on each of the .ref file names")
@@ -171,21 +174,32 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
               help="The value for NODATA in the multidate image and output fit images. Default is -3000.")
 @click.option('-O', '--outputimagename', type=click.STRING, default=None,
               help="Name of the image to be created with the file extension. Default is the date and crop image name.")
-def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimagename, valueofcropinimage):
+@click.option('--tstart', type=click.INT, default=500,
+              help="The threshold start value. Default is 500.")
+@click.option('--tstep', type=click.INT, default=100,
+              help="The threshold step value. Default is 100.")
+@click.option('--tstepcount', type=click.INT, default=10,
+              help="The number of threshold steps. Default is 10.")
+def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimagename, valueofcropinimage, tstart, tstep,
+             tstepcount):
     """
     Classify a multidate image and assess the accuracy of said classification.
     """
+
+    print valueofcropinimage
 
     if outputdirectory is None:
         outputdirectory = os.path.dirname(fitimagedirectory)
 
     classify_and_assess_accuracy(fitimagedirectory, cropimage, valueofcropinimage, ndvalue,
-                                 outdir=outputdirectory, outfilename=outputimagename)
+                                 outdir=outputdirectory, outfilename=outputimagename, threshstart=tstart,
+                                 threshstep=tstep, threshstepcount=tstepcount)
 
 
 cli.add_command(find_fit)
 cli.add_command(build_multidate_image)
 cli.add_command(extract_signatures)
+cli.add_command(classify)
 
 if __name__ == '__main__':
     cli()
