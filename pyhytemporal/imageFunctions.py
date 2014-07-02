@@ -1,6 +1,6 @@
 import numpy
 from osgeo import gdal
-from osgeo.gdalconst import GA_ReadOnly
+from osgeo.gdalconst import *
 from core import gdalObject, gdalProperties
 from utils import change_geotransform
 
@@ -174,3 +174,25 @@ def read_image_into_array(gdalimage):
         array[i] = band.ReadAsArray(0, 0, properties.cols, properties.rows)
 
     return array
+
+
+def create_test_image(imagepath, imagename, drivercode="ENVI"):
+    """
+    Outputs a 100px by 100px image with constant pixel values of 1000.
+
+    "/Users/phoetrymaster/Documents/School/Geography/Thesis/Data/TestingImagery.tif"
+    """
+
+    #TODO: test for ext on imagename; add if missing -- how to check if not a tif ext?
+
+    driver = gdal.GetDriverByName(drivercode)
+    driver.Register()
+    image = driver.Create(os.path.join(imagepath, imagename), 100, 100, 1, GDT_Int16)
+    imageband = image.GetRasterBand(1)
+    outarray = numpy.zeros(shape=(100, 00))
+    outarray[outarray == 0] = 1000
+    imageband.WriteArray(outarray)
+    imageband = ""
+    image = ""
+
+    return 0
