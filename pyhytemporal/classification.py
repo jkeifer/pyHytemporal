@@ -533,7 +533,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
 
 
 def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, nodata, threshstart=500, threshstep=100,
-                                 threshstepcount=10, outdir=None, outfilename=None):
+                                 threshstepcount=10, outdir=None, outfilename=None, singlethresh=None):
     """
     """
     #TODO Docstring
@@ -572,7 +572,10 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
 
         print filelist
 
-        thresholds = generate_thresholds(threshstart, threshstep, threshstepcount, len(filelist))
+        if singlethresh:
+            thresholds = range(threshstart, (threshstepcount * threshstep + threshstart), threshstep) * len(filelist)
+        else:
+            thresholds = generate_thresholds(threshstart, threshstep, threshstepcount, len(filelist))
 
         writestring = ""
         bestacc = 0
