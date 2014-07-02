@@ -140,12 +140,12 @@ def get_px_coords_from_points(raster, shapefile):
     left = image.geotransform[0]
     top = image.geotransform[3]
     right = image.cols * image.geotransform[1] + image.geotransform[0]
-    bottom = image.cols * image.geotransform[5] + image.geotransform[3]
+    bottom = image.rows * image.geotransform[5] + image.geotransform[3]
 
     pxcoords = []
     for coords in pointcoords:
-        x = int(floor(image.cols * (coords[0] - left) / (right - left)))
-        y = int(floor(image.rows * (coords[1] - top) / (bottom - top)))
-        pxcoords.append((x, y))
+        col = int(floor(image.cols * (coords[0] - left) / (right - left)))
+        row = int(floor(image.rows * (coords[1] - top) / (bottom - top)))
+        pxcoords.append((row, col))
 
     return pxcoords
