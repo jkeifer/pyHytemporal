@@ -573,7 +573,12 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
         print filelist
 
         if singlethresh:
-            thresholds = range(threshstart, (threshstepcount * threshstep + threshstart), threshstep) * len(filelist)
+            thresholds = []
+            for val in range(threshstart, (threshstepcount * threshstep + threshstart), threshstep):
+                threshtemp = []
+                for i in range(len(filelist)):
+                    threshtemp.append(val)
+                thresholds.append(threshtemp)
         else:
             thresholds = generate_thresholds(threshstart, threshstep, threshstepcount, len(filelist))
 
