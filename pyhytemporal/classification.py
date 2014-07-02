@@ -106,6 +106,7 @@ def build_multiband_image(rootDIR, outName, newfoldername, find, drivercode, ndv
     print"\nAdding bands to output file..."
     for i in range(0, bands):
         print "\tProcessing band {0} of {1}...".format(i + 1, bands)
+        print toprocess[i]
         image = openImage(toprocess[i])
         band = image.GetRasterBand(1)
 
@@ -195,7 +196,7 @@ def find_fit(valsf, interpolatedreferencecurve, bestguess, fitmethod=None, bound
     return res.fun, res.x, res.message
 
 
-def process_pixel(bands, bestguess, col, cropname, doyinterval, fitmthd, array, interpolatedCurve, outarray, row,
+def process_pixel(bestguess, col, cropname, doyinterval, fitmthd, array, interpolatedCurve, outarray, row,
                   startDOY, ndvalue, meantype=None, thresh=None):
     #TODO docstrings
 
@@ -257,13 +258,13 @@ def process_reference(outputdir, signature, array, imageproperties, startDOY, do
         #Iterate through each pixel and calculate the fit for each ref curve; write RMSE to array
         if subset:
             for col, row in subset:
-                outarray = process_pixel(imageproperties.bands, bestguess, col, signature.name, doyinterval, fitmthd,
+                outarray = process_pixel(bestguess, col, signature.name, doyinterval, fitmthd,
                                          array, interpolatedCurve, outarray,
                                          row, startDOY, ndvalue, meantype=meantype, thresh=thresh)
         else:
             for row in range(0, imageproperties.rows):
                 for col in range(0, imageproperties.cols):
-                    outarray = process_pixel(imageproperties.bands, bestguess, col, signature.name, doyinterval,
+                    outarray = process_pixel(bestguess, col, signature.name, doyinterval,
                                              fitmthd, array, interpolatedCurve, outarray,
                                              row, startDOY, ndvalue, meantype=meantype, thresh=thresh)
 
@@ -348,8 +349,8 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
                                                                                                   imageproperties.rows,
                                                                                                   imageproperties.bands)
 
-        array = read_image_into_array(image)
-        array = array.transpose(1, 2, 0)
+        array = read_image_into_array(image)  # Read all bands into a 3d array representing the image stack (time, x, y orientation)
+        array = array.transpose(1, 2, 0)  # Turn the array to allow a single pixel to be isolated in the stack (x, y, time orientation)
 
         if subset:
             subset = get_px_coords_from_points(imagetoprocess, subset)
@@ -361,6 +362,9 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
                                               bestguess, ndvalue),
                                         kwargs={"subset": subset, "fitmthd": fitmethod, "meantype": meantype,
                                                 "thresh": threshold})
+
+            #TODO: Problem with joining/starting processes--original thread closes before others are completed
+
             p.start()
             processes.append(p)
 
@@ -644,9 +648,9 @@ def get_crop_pixel_values(imagepath, locations):
     for location in locations:
         print "Processing coordinates: {0}".format(location)
         values = []
-        for i in range(0, bands):
+        for i in range(bands):
             band = img.GetRasterBand(i + 1)
-            v = int(band.ReadAsArray(int(floor(location[0])), int(floor(location[1])), 1, 1))
+            v = int(band.ReadAsArray(location[1], location[0], 1, 1))
             print "\tBand {0}: {1}".format(i + 1, v)
             values.append(v)
             band = None
