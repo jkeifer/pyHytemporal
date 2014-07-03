@@ -471,7 +471,7 @@ class pixel(object):
             for bandnumber in range(1, numberofbands + 1):
                 self.bandDOYs.append(band_number_to_doy(bandnumber, startDOY, imageryinterval))
         else:
-            warnings.warn("Band DOYs already exist. Use force tag to overwrite.")
+            warnings.warn("Band DOYs already exist. Use force=True to overwrite.")
 
 if __name__ == '__main__':
     sys.exit()
