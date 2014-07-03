@@ -257,7 +257,7 @@ def process_reference(outputdir, signature, array, imageproperties, startDOY, do
 
         #Iterate through each pixel and calculate the fit for each ref curve; write RMSE to array
         if subset:
-            for col, row in subset:
+            for row, col in subset:
                 outarray = process_pixel(bestguess, col, signature.name, doyinterval, fitmthd,
                                          array, interpolatedCurve, outarray,
                                          row, startDOY, ndvalue, meantype=meantype, thresh=thresh)
