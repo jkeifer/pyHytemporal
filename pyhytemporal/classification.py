@@ -449,7 +449,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
         count += 1
 
         for i in range(len(ltarrays)):
-            if not i:
+            if i == 0:
                 allpxbestfit = numpy.copy(ltarrays[i])
             else:
                 allpxbestfit = allpxbestfit.__and__(ltarrays[i])
@@ -532,27 +532,29 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     return accuracy, classification, outstring
 
 
-def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, nodata, threshstart=500, threshstep=100,
-                                 threshstepcount=10, outdir=None, outfilename=None, singlethresh=None):
+def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, nodata, newfoldername,
+                                 threshstart=500, threshstep=100, threshstepcount=10, outputdir=None,
+                                 classifiedimagename=None, singlethresh=None):
     """
     """
     #TODO Docstring
 
-    if outdir is None:
-        outdir = searchdir
+    if outputdir is None:
+        outputdir = searchdir
     else:
         pass
 
-    if outfilename is None:
+    outdir = create_output_dir(outputdir, newfoldername)
+
+    if classifiedimagename is None:
         today = dt.now()
-        outfilename = today.strftime("%Y-%m-%d_%H%M%S_") + os.path.splitext(os.path.basename(cropimgpath))[0]
+        classifiedimagename = today.strftime("%Y-%m-%d_%H%M%S_") + os.path.splitext(os.path.basename(cropimgpath))[0]
 
-    outFile = os.path.join(outdir, outfilename + ".tif")
-
-    accuracyreport = os.path.join(outdir, outfilename + ".txt")
+    classificationimage = os.path.join(outdir, classifiedimagename + ".tif")
+    accuracyreport = os.path.join(outdir, classifiedimagename + ".txt")
 
     try:
-        #np.set_printoptions(threshold=np.nan)
+        #np.set_printoptions(threshold=np.nan)  # For debug: Makes numpy print whole contents of an array.
         #Crop image is constant for all iterations
         cropimg = gdalObject()
         cropimg.open(cropimgpath)
@@ -618,7 +620,7 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
         driver = gdal.GetDriverByName("ENVI")
         driver.Register()
 
-        outds = driver.Create(outFile, cropimg.cols, cropimg.rows, 1, GDT_Int16)
+        outds = driver.Create(classificationimage, cropimg.cols, cropimg.rows, 1, GDT_Int16)
         outds.SetGeoTransform(cropimg.geotransform)
         outds.SetProjection(cropimg.projection)
         outband = outds.GetRasterBand(1)
