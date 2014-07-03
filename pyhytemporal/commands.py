@@ -180,8 +180,10 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
               help="The threshold step value. Default is 100.")
 @click.option('--tstepcount', type=click.INT, default=10,
               help="The number of threshold steps. Default is 10.")
+@click.option('--nocombo', is_flag=True,
+              help="Does not find combination of threshold steps, but steps through a single threshold value applied to all fit images.")
 def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimagename, valueofcropinimage, tstart, tstep,
-             tstepcount):
+             tstepcount, nocombo):
     """
     Classify a multidate image and assess the accuracy of said classification.
     """
@@ -193,7 +195,7 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
 
     classify_and_assess_accuracy(fitimagedirectory, cropimage, valueofcropinimage, ndvalue,
                                  outdir=outputdirectory, outfilename=outputimagename, threshstart=tstart,
-                                 threshstep=tstep, threshstepcount=tstepcount)
+                                 threshstep=tstep, threshstepcount=tstepcount, singlethresh=nocombo)
 
 
 cli.add_command(find_fit)
