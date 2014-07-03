@@ -194,7 +194,7 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
         outputdirectory = os.path.dirname(fitimagedirectory)
 
     classify_and_assess_accuracy(fitimagedirectory, cropimage, valueofcropinimage, ndvalue,
-                                 outdir=outputdirectory, outfilename=outputimagename, threshstart=tstart,
+                                 outdir=outputdirectory, classifiedimagename=outputimagename, threshstart=tstart,
                                  threshstep=tstep, threshstepcount=tstepcount, singlethresh=nocombo)
 
 
