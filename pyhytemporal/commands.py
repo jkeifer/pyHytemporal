@@ -136,7 +136,7 @@ def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfold
               required=True, help="Path to the directory containing point .shp files for each of the classes.")
 @click.option('-o', '--outputdir', type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True,
                                                    readable=True, resolve_path=True),
-              default=None, help="Path to the output directory. Default is to use the directory containing the image.")
+              default=None, help="Path to the output directory. Default is to create a directory in the folder containing the image.")
 @click.option('-s', '--startDOY', type=click.INT, help="The start DOY for the multidate image.", required=True)
 @click.option('-d', '--DOYinterval', type=click.INT, help="The interval of the imagery in the multidate image.",
               required=True)
@@ -149,7 +149,7 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
     """
 
     if outputdir is None:
-        outputdir = os.path.dirname(image)
+        outputdir = create_output_dir(os.path.dirname(image), "signatures", usetime=True)
 
     shapefiles = find_files(shapefiledirectory, ".shp", recursive=False)
 
