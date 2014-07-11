@@ -22,7 +22,12 @@ def find_files(searchdir, ext, recursive=True):
     return foundfiles
 
 
-def unique_name(root, name, ext=""):
+def unique_name(root, name, ext="", usetime=False):
+
+    if usetime:
+        import datetime
+        name = name + datetime.datetime.now().strftime("_%Y-%m-%d_%H%M")
+
     fullpath = os.path.join(root, name + ext)
 
     if os.path.exists(fullpath):
@@ -39,8 +44,8 @@ def unique_name(root, name, ext=""):
     return fullpath
 
 
-def create_output_dir(root, name):
-    dirpath = unique_name(root, name)
+def create_output_dir(root, name, usetime=False):
+    dirpath = unique_name(root, name, usetime=usetime)
     os.makedirs(dirpath)
     return dirpath
 
