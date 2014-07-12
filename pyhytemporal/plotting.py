@@ -13,6 +13,7 @@ def plot_color_picker(i):
 
 class Plot(object):
     def __init__(self, outputpath, name):
+        #TODO: Validate Directory
         self.pdf = PdfPages(os.path.join(outputpath, name + ".pdf"))
         self.figure = None
 
@@ -31,6 +32,11 @@ class Plot(object):
             raise Exception("Error: no figure is open. Cannot close nothing.")
 
     def close_plot(self):
+        try:
+            self.close_figure()
+        except:
+            pass
+
         self.pdf.close()
 
 
@@ -44,7 +50,11 @@ class PixelPlot(Plot):
         else:
             color = "black-"
 
-        self.create_figure()
+        try:
+            self.create_figure()
+        except:
+            pass
+
         axes = self.figure.add_subplot(1, 1, 1)
         axes.plot(pixelObject.values, pixelObject.bandDOYs, color)
         axes.set_xlabel("Pixel row {0} col {1}: {2} as {3} in classified".format(pixelObject.row,
@@ -63,10 +73,14 @@ class SignaturePlot(Plot):
         else:
             color = "black-"
 
-        self.create_figure()
+        try:
+            self.create_figure()
+        except:
+            pass
+
         axes = self.figure.add_subplot(1,1,1)
-        axes.plot(temporalSignature.vivalues, temporalSignature.daysofyear, color)
-        axes.set_xlabel("Temporal signature {1}".format(temporalSignature.name))
+        axes.plot(temporalSignature.daysofyear, temporalSignature.vivalues, color)
+        axes.set_xlabel("Temporal signature {0}".format(temporalSignature.name))
 
         if closefigure is True:
             self.close_figure()
