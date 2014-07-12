@@ -4,6 +4,7 @@ from imageFunctions import clip_raster_to_extent
 from utils import *
 from classification import *
 from signatureFunctions import get_sigs_in_dir
+from plotting import SignaturePlot
 
 
 def validate_value(ctx, param, value):
@@ -138,7 +139,11 @@ def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfold
               required=True)
 @click.option('-l', '--filelabel', type=click.STRING, default="",
               help="A label to postfix on each of the .ref file names")
-def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputdir, filelabel):
+@click.option('-l', '--filelabel', type=click.STRING, default="",
+              help="A label to postfix on each of the .ref file names")
+@click.option('-p', '--plotsigs', is_flag=True,
+              help="Create a pdf plot of all the generated signatures.")
+def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputdir, filelabel, plotsigs):
     """
     Extracts temporal signatures for a set of point geometry shapefiles in a specified directory and outputs them to a
     set of .ref files in an output directory.
@@ -152,6 +157,11 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
     #TODO: Need a method to find only valid shapefiles in the directory
 
     get_reference_curves(image, shapefiles, startdoy, doyinterval, outdir=outputdir, filepostfix=filelabel)
+
+    if plotsigs:
+        sigs = get_sigs_in_dir(outputdir)
+        plot = SignaturePlot(outputdir, "signaturePlot")
+        plot.plot_collection(sigs)
 
 
 @click.command()
