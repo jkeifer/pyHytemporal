@@ -14,6 +14,7 @@ from imageFunctions import *
 from vectorFunctions import get_px_coords_from_points
 from utils import *
 from core import *
+from plotting import plot
 
 lock = multiprocessing.Lock()
 
@@ -350,7 +351,7 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
                                                                                                   imageproperties.bands)
 
         array = read_image_into_array(image)  # Read all bands into a 3d array representing the image stack (time, x, y orientation)
-        array = array.transpose(1, 2, 0)  # Turn the array to allow a single pixel to be isolated in the stack (x, y, time orientation)
+        #array = array.transpose(1, 2, 0)  # Turn the array to allow a single pixel to be isolated in the stack (x, y, time orientation)
 
         if subset:
             subset = get_px_coords_from_points(imagetoprocess, subset)
@@ -439,6 +440,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
         nodataarrays = []
         for i in range(len(arrays)):
             if not i == count:
+                # This bit finds the lowest value for each pixel, and something else I can't quite ascertain with the nodata
                 lt = array.__lt__(arrays[i][0])
                 ltarrays.append(numpy.copy(lt))
                 ndarray = numpy.copy(array)
@@ -460,7 +462,7 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
         if nodataarray == "":
             nodataarray = numpy.copy(ndarray)
         else:
-            nodataarray = nodataarray.__and__(ndarray)
+            nodataarray = nodataarray.__and__(ndarray)  # Merge all nodata pixels from each fit image into one array
 
     classification = ""
     for final in finals:
@@ -532,9 +534,10 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
     return accuracy, classification, outstring
 
 
-def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, nodata, newfoldername,
+def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, nodata,
                                  threshstart=500, threshstep=100, threshstepcount=10, outputdir=None,
-                                 classifiedimagename=None, singlethresh=None):
+                                 classifiedimagename=None, singlethresh=None,
+                                 plotcorrectpx=False, plotincorrectpx=False):
     """
     """
     #TODO Docstring
@@ -544,14 +547,18 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
     else:
         pass
 
-    outdir = create_output_dir(outputdir, newfoldername)
-
     if classifiedimagename is None:
         today = dt.now()
-        classifiedimagename = today.strftime("%Y-%m-%d_%H%M%S_") + os.path.splitext(os.path.basename(cropimgpath))[0]
+        classifiedimagename = today.strftime("%Y-%m-%d_%H%M_") + os.path.splitext(os.path.basename(cropimgpath))[0]
 
-    classificationimage = os.path.join(outdir, classifiedimagename + ".tif")
-    accuracyreport = os.path.join(outdir, classifiedimagename + ".txt")
+    classificationimage = os.path.join(outputdir, classifiedimagename + ".tif")
+    accuracyreport = os.path.join(outputdir, classifiedimagename + ".txt")
+
+    if plotcorrectpx:
+        correctpxplot = plot(outputdir, "correctpxplot")
+
+    if plotincorrectpx:
+        incorrectpxplot = plot(outputdir, "incorrectpxplot")
 
     try:
         #np.set_printoptions(threshold=np.nan)  # For debug: Makes numpy print whole contents of an array.
