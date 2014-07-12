@@ -3,7 +3,7 @@ import click
 from imageFunctions import clip_raster_to_extent
 from utils import *
 from classification import *
-from core import signatureCollection
+from signatureFunctions import get_sigs_in_dir
 
 
 def validate_value(ctx, param, value):
@@ -74,11 +74,7 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
     #TODO Docstring
     #TODO Add Parameter Validation Callbacks as necessary
 
-    signatures = signatureCollection(vi)
-    sigFiles = find_files(signaturedirectory, "mean.ref", recursive=False)
-
-    for f in sigFiles:
-        signatures.add(f)
+    signatures = get_sigs_in_dir(signaturedirectory, viname=vi)
 
     if outputdir is None:
         outputdir = os.path.dirname(image)
@@ -191,10 +187,10 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
     print valueofcropinimage
 
     if outputdirectory is None:
-        outputdirectory = os.path.dirname(fitimagedirectory)
+        outputdirectory = create_output_dir(os.path.dirname(fitimagedirectory), "classification", usetime=True)
 
     classify_and_assess_accuracy(fitimagedirectory, cropimage, valueofcropinimage, ndvalue,
-                                 outdir=outputdirectory, classifiedimagename=outputimagename, threshstart=tstart,
+                                 outputdir=outputdirectory, classifiedimagename=outputimagename, threshstart=tstart,
                                  threshstep=tstep, threshstepcount=tstepcount, singlethresh=nocombo)
 
 
