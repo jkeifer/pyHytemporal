@@ -167,11 +167,13 @@ def read_image_into_array(gdalimage):
 
     properties = gdalProperties(gdalimage)
 
-    array = numpy.empty([properties.bands, properties.cols, properties.rows], dtype=int)
+    array = numpy.empty([properties.bands, properties.rows, properties.cols], dtype=int)
 
     for i in range(properties.bands):
         band = gdalimage.GetRasterBand(i + 1)
         array[i] = band.ReadAsArray(0, 0, properties.cols, properties.rows)
+
+    array = array.transpose(1, 2, 0)  # Turn the array to allow a single pixel to be isolated in the stack (x, y, time orientation)
 
     return array
 
@@ -189,7 +191,7 @@ def create_test_image(imagepath, imagename, drivercode="ENVI"):
     driver.Register()
     image = driver.Create(os.path.join(imagepath, imagename), 100, 100, 1, GDT_Int16)
     imageband = image.GetRasterBand(1)
-    outarray = numpy.zeros(shape=(100, 00))
+    outarray = numpy.zeros(shape=(100, 50))
     outarray[outarray == 0] = 1000
     imageband.WriteArray(outarray)
     imageband = ""
