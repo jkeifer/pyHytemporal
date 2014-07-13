@@ -604,7 +604,7 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
                 bestthresh = thresh
 
             elapsed = dt.now() - start
-            toprint = [thresh, "{}:{}".format(elapsed.seconds, elapsed.microseconds), accuracy, bestacc, bestthresh]
+            toprint = [thresh, "{}:{}".format(elapsed.seconds, str(elapsed.microseconds).zfill(6)), accuracy, bestacc, bestthresh]
             width = (6 * len(filelist))
             print "Thresh: {: <{width}}   Time: {}   Acc: {: <14}   Best: {: <14} at {}\r".format(*toprint, width=width),
 
