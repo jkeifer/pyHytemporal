@@ -14,7 +14,7 @@ from imageFunctions import *
 from vectorFunctions import get_px_coords_from_points
 from utils import *
 from core import *
-from plotting import plot
+from plotting import Plot
 
 lock = multiprocessing.Lock()
 
@@ -555,10 +555,10 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
     accuracyreport = os.path.join(outputdir, classifiedimagename + ".txt")
 
     if plotcorrectpx:
-        correctpxplot = plot(outputdir, "correctpxplot")
+        correctpxplot = Plot(outputdir, "correctpxplot")
 
     if plotincorrectpx:
-        incorrectpxplot = plot(outputdir, "incorrectpxplot")
+        incorrectpxplot = Plot(outputdir, "incorrectpxplot")
 
     try:
         #np.set_printoptions(threshold=np.nan)  # For debug: Makes numpy print whole contents of an array.
@@ -569,7 +569,6 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
         croparray = band.ReadAsArray(0, 0, cropimg.cols, cropimg.rows)
         band = None
         cropimg.close()
-        print("Opened crop img")
 
         filelist = []
         files = os.listdir(searchdir)
@@ -578,8 +577,6 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
                 if f.endswith(".tif"):
                     if string in f:
                         filelist.append((os.path.join(searchdir, f), val))
-
-        print filelist
 
         if singlethresh:
             thresholds = []
@@ -607,7 +604,9 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
                 bestthresh = thresh
 
             elapsed = dt.now() - start
-            print thresh, elapsed, accuracy, bestacc
+            toprint = [thresh, elapsed, accuracy, bestacc, bestthresh]
+            width = (6 * len(filelist) + 2)
+            print "Thresh: {: <{width}}   Time: {}   Acc: {}   Best: {} at {}\r".format(*toprint, width=width),
 
     except Exception as e:
         print e
