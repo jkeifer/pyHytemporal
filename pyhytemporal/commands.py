@@ -194,8 +194,6 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
     Classify a multidate image and assess the accuracy of said classification.
     """
 
-    print valueofcropinimage
-
     if outputdirectory is None:
         outputdirectory = create_output_dir(os.path.dirname(fitimagedirectory), "classification", usetime=True)
 
