@@ -415,15 +415,15 @@ def classify_with_threshold(croparray, arraylist, searchdir, searchstringsvals, 
     """
     #TODO DOCSTRING
     #TODO test to ensure thresh length is equal to the number of image files?
-    #TODO Refactor into smaller, testable methods...
+    #TODO REFACTOR INTO SMALLER, MORE-TESTABLE FUNCTIONS!!!!
 
     arrays = []
 
-    for i, startarray, cropval in enumerate(arraylist):
-        array = numpy.copy(startarray)  # Not sure if I need to cpy, but believe the array is passed to the func by ref
+    for i, arrayval in enumerate(arraylist):
+        array = numpy.copy(arrayval[0])  # Not sure if I need to cpy, but believe the array is passed to the func by ref
         #TODO: Test to see if arrays are passed by reference
         array[array > thresh[i]] = 10000  # Make all values in the array greater than the thresh equal 10000
-        arrays.append((array, cropval))  # Copy the array into a list
+        arrays.append((array, arrayval[1]))  # Copy the array into a list
 
     count = 0
     finals = []
@@ -556,34 +556,32 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
     if plotincorrectpx:
         incorrectpxplot = Plot(outputdir, "incorrectpxplot")
 
-        #np.set_printoptions(threshold=np.nan)  # For debug: Makes numpy print whole contents of an array.
-        #Crop image is constant for all iterations
-        cropimg = gdalObject()
-        cropimg.open(cropimgpath)
-        band = cropimg.gdal.GetRasterBand(1)
-        croparray = band.ReadAsArray(0, 0, cropimg.cols, cropimg.rows)
-        band = None
-        cropimg.close()
+    #np.set_printoptions(threshold=np.nan)  # For debug: Makes numpy print whole contents of an array.
+    #Crop image is constant for all iterations
+    cropimg = gdalObject()
+    cropimg.open(cropimgpath)
+    band = cropimg.gdal.GetRasterBand(1)
+    croparray = band.ReadAsArray(0, 0, cropimg.cols, cropimg.rows)
+    band = None
+    cropimg.close()
 
-        #Find fit images and open as arrays, building a list of tuples of the array and crop value
-        files = os.listdir(searchdir)
-        arraylist = [(read_image_into_array(openImage(os.path.join(searchdir, f))), val)
-                     for string, val in searchstringsvals for f in files if f.endswith(".tif") and string in f]
+    #Find fit images and open as arrays, building a list of tuples of the array and crop value
+    files = os.listdir(searchdir)
+    arraylist = [(read_image_into_array(openImage(os.path.join(searchdir, f))), val)
+                 for string, val in searchstringsvals for f in files if f.endswith(".tif") and string in f]
 
-        #Create threshold generator
-        if singlethresh:
-            thresholds = []
-            for val in range(threshstart, (threshstepcount * threshstep + threshstart), threshstep):
-                threshtemp = []
-                for i in range(len(arraylist)):
-                    threshtemp.append(val)
-                thresholds.append(threshtemp)
-        else:
-            thresholds = generate_thresholds(threshstart, threshstep, threshstepcount, len(arraylist))
+    #Create threshold generator
+    if singlethresh:
+        thresholds = []
+        for val in range(threshstart, (threshstepcount * threshstep + threshstart), threshstep):
+            threshtemp = [val for item in arraylist]
+            thresholds.append(threshtemp)
+    else:
+        thresholds = generate_thresholds(threshstart, threshstep, threshstepcount, len(arraylist))
 
-        writestring = ""
-        bestacc = 0
-        bestthresh = ""
+    writestring = ""
+    bestacc = 0
+    bestthresh = ""
 
     try:
         #TODO: Refactor to allow use of multiprocessing.Pool.map -- need to reason about the output/logging
@@ -603,7 +601,10 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
             print "Thresh: {: <{width}}   Time: {}   Acc: {: <14}   Best: {: <14} at {}\r".format(*toprint, width=width),
 
     except Exception as e:
+        import traceback
+        exc_type, exc_value, exc_traceback = sys.exc_info()
         print e
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
 
     finally:
 
