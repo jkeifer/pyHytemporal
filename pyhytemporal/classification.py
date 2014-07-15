@@ -410,27 +410,20 @@ def generate_thresholds(start, step, numberofsteps, lengthofelement):
         yield i
 
 
-def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, thresh, nodata):
+def classify_with_threshold(croparray, arraylist, searchdir, searchstringsvals, thresh, nodata):
+    """
+    """
+    #TODO DOCSTRING
     #TODO test to ensure thresh length is equal to the number of image files?
+    #TODO Refactor into smaller, testable methods...
 
     arrays = []
-    #print filelist
 
-    i = 0  # Track the iterations to set the thresholds for each image
-    for imagefile, cropval in filelist:
-        img = openImage(imagefile)
-        #TODO Convert to new properties object and refactor into smaller, testable methods...
-        if img is None:
-            raise Exception("Could not open: {0}".format(os.path.join(searchdir, imagefile)))
-        else:
-            band = img.GetRasterBand(1)
-            array = band.ReadAsArray(0, 0, img.RasterXSize, img.RasterYSize)
-            array[array > thresh[i]] = 10000  # Make all values in the array greater than the thresh equal 10000
-            arrays.append((numpy.copy(array), cropval))  # Copy the array into a list
-            del array
-            band = ""
-            img = ""
-        i += 1
+    for i, startarray, cropval in enumerate(arraylist):
+        array = numpy.copy(startarray)  # Not sure if I need to cpy, but believe the array is passed to the func by ref
+        #TODO: Test to see if arrays are passed by reference
+        array[array > thresh[i]] = 10000  # Make all values in the array greater than the thresh equal 10000
+        arrays.append((array, cropval))  # Copy the array into a list
 
     count = 0
     finals = []
@@ -537,10 +530,13 @@ def classify_with_threshold(croparray, filelist, searchdir, searchstringsvals, t
 def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, nodata,
                                  threshstart=500, threshstep=100, threshstepcount=10, outputdir=None,
                                  classifiedimagename=None, singlethresh=None,
-                                 plotcorrectpx=False, plotincorrectpx=False):
+                                 plotcorrectpx=False, plotincorrectpx=False, numberofprocesses=4):
     """
     """
     #TODO Docstring
+
+    #from multiprocessing import Pool
+    #pool = Pool(numberofprocesses)
 
     if outputdir is None:
         outputdir = searchdir
@@ -560,7 +556,6 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
     if plotincorrectpx:
         incorrectpxplot = Plot(outputdir, "incorrectpxplot")
 
-    try:
         #np.set_printoptions(threshold=np.nan)  # For debug: Makes numpy print whole contents of an array.
         #Crop image is constant for all iterations
         cropimg = gdalObject()
@@ -570,33 +565,32 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
         band = None
         cropimg.close()
 
-        filelist = []
+        #Find fit images and open as arrays, building a list of tuples of the array and crop value
         files = os.listdir(searchdir)
-        for f in files:
-            for string, val in searchstringsvals:
-                if f.endswith(".tif"):
-                    if string in f:
-                        filelist.append((os.path.join(searchdir, f), val))
+        arraylist = [(read_image_into_array(openImage(os.path.join(searchdir, f))), val)
+                     for string, val in searchstringsvals for f in files if f.endswith(".tif") and string in f]
 
+        #Create threshold generator
         if singlethresh:
             thresholds = []
             for val in range(threshstart, (threshstepcount * threshstep + threshstart), threshstep):
                 threshtemp = []
-                for i in range(len(filelist)):
+                for i in range(len(arraylist)):
                     threshtemp.append(val)
                 thresholds.append(threshtemp)
         else:
-            thresholds = generate_thresholds(threshstart, threshstep, threshstepcount, len(filelist))
+            thresholds = generate_thresholds(threshstart, threshstep, threshstepcount, len(arraylist))
 
         writestring = ""
         bestacc = 0
         bestthresh = ""
+
+    try:
+        #TODO: Refactor to allow use of multiprocessing.Pool.map -- need to reason about the output/logging
         for thresh in thresholds:
             start = dt.now()
-            accuracy, classification, outstring = classify_with_threshold(croparray,
-                                                                                      filelist,
-                                                                                      searchdir, searchstringsvals,
-                                                                                      thresh, nodata)
+            accuracy, classification, outstring = classify_with_threshold(croparray, arraylist, searchdir,
+                                                                          searchstringsvals, thresh, nodata)
             writestring = writestring + outstring
 
             if accuracy > bestacc:
@@ -605,7 +599,7 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
 
             elapsed = dt.now() - start
             toprint = [thresh, "{}:{}".format(elapsed.seconds, str(elapsed.microseconds).zfill(6)), accuracy, bestacc, bestthresh]
-            width = (6 * len(filelist))
+            width = (6 * len(arraylist))
             print "Thresh: {: <{width}}   Time: {}   Acc: {: <14}   Best: {: <14} at {}\r".format(*toprint, width=width),
 
     except Exception as e:
@@ -619,9 +613,8 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
 
         print "\n", bestthresh, bestacc
 
-        accuracy, classification, outstring = classify_with_threshold(croparray, filelist, searchdir,
-                                                                                  searchstringsvals, bestthresh,
-                                                                                  nodata)
+        accuracy, classification, outstring = classify_with_threshold(croparray, arraylist, searchdir,
+                                                                      searchstringsvals, bestthresh, nodata)
 
         driver = gdal.GetDriverByName("ENVI")
         driver.Register()
