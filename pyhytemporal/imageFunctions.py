@@ -175,7 +175,7 @@ def read_image_into_array(gdalimage):
 
     array = array.transpose(1, 2, 0)  # Turn the array to allow a single pixel to be isolated in the stack (x, y, time orientation)
 
-    return array
+    return array.squeeze()  # Squeeze removes z-dimension if image only has one band
 
 
 def create_test_image(imagepath, imagename, drivercode="ENVI"):
