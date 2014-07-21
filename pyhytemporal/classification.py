@@ -396,6 +396,24 @@ def phenological_classificaion(imagetoprocess, outputdirectory, signaturecollect
 #############################################
 
 
+def write_output_image(propertiestocopy, outname, data, nodata):
+    raster = copySchemaToNewImage(propertiestocopy, outname)
+    raster_band = raster.GetRasterBand(1)
+    raster_band.WriteArray(data, 0, 0)
+    raster_band.SetNoDataValue(nodata)
+    raster_band.FlushCache()
+    raster_band = None
+    raster = None
+
+
+def get_fit_rasters(searchdir, searchstringsvals):
+    #Find fit images and open as arrays, building a list of tuples of the array and crop value
+    files = os.listdir(searchdir)
+    filevallist = [(os.path.join(searchdir, f), val) for string, val in searchstringsvals
+                for f in files if f.endswith(".tif") and string in f]
+    return filevallist
+
+
 def generate_thresholds(start, step, numberofsteps, lengthofelement):
     #TODO Docstring
 
@@ -410,7 +428,14 @@ def generate_thresholds(start, step, numberofsteps, lengthofelement):
         yield i
 
 
-def classify_with_threshold(croparray, arraylist, searchdir, searchstringsvals, thresh, nodata):
+def find_correct_incorrect_array(trutharray, classificationarray, ndvalue=-3000):
+    accuracyarray = classificationarray.__eq__(trutharray)  # sets acc array to 1 where equal, 0 where not
+    accuracyarray[classificationarray == ndvalue] = ndvalue  # where classification contains nodata, set acc to nodata
+    accuracyarray[trutharray == ndvalue] = ndvalue  # where trutharray contains nodata, set acc to nodata
+    return accuracyarray
+
+
+def classify_with_threshold(croparray, arraylist, searchstringsvals, thresh, nodata):
     """
     """
     #TODO DOCSTRING
@@ -527,10 +552,9 @@ def classify_with_threshold(croparray, arraylist, searchdir, searchstringsvals, 
     return accuracy, classification, outstring
 
 
-def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, nodata,
-                                 threshstart=500, threshstep=100, threshstepcount=10, outputdir=None,
-                                 classifiedimagename=None, singlethresh=None,
-                                 plotcorrectpx=False, plotincorrectpx=False, numberofprocesses=4):
+def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, filevalist, nodata, thresholdlist,
+                                 classifiedimagename=None, plotcorrectpx=False, plotincorrectpx=False,
+                                 numberofprocesses=4):
     """
     """
     #TODO Docstring
@@ -538,16 +562,12 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
     #from multiprocessing import Pool
     #pool = Pool(numberofprocesses)
 
-    if outputdir is None:
-        outputdir = searchdir
-    else:
-        pass
-
     if classifiedimagename is None:
         today = dt.now()
         classifiedimagename = today.strftime("%Y-%m-%d_%H%M_") + os.path.splitext(os.path.basename(cropimgpath))[0]
 
     classificationimage = os.path.join(outputdir, classifiedimagename + ".tif")
+    accuracyimage = os.path.join(outputdir, classifiedimagename + "_accuracy.tif")
     accuracyreport = os.path.join(outputdir, classifiedimagename + ".txt")
 
     if plotcorrectpx:
@@ -558,48 +578,39 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
 
     #np.set_printoptions(threshold=np.nan)  # For debug: Makes numpy print whole contents of an array.
     #Crop image is constant for all iterations
-    cropimg = gdalObject()
-    cropimg.open(cropimgpath)
-    band = cropimg.gdal.GetRasterBand(1)
-    croparray = band.ReadAsArray(0, 0, cropimg.cols, cropimg.rows)
-    band = None
-    cropimg.close()
+    cropimg = openImage(cropimgpath)
+    cropimgproperties = gdalProperties(cropimg)
+    croparray = read_image_into_array(cropimg)
+    cropimg = None
 
-    #Find fit images and open as arrays, building a list of tuples of the array and crop value
-    files = os.listdir(searchdir)
-    arraylist = [(read_image_into_array(openImage(os.path.join(searchdir, f))), val)
-                 for string, val in searchstringsvals for f in files if f.endswith(".tif") and string in f]
-
-    #Create threshold generator
-    if singlethresh:
-        thresholds = []
-        for val in range(threshstart, (threshstepcount * threshstep + threshstart), threshstep):
-            threshtemp = [val for item in arraylist]
-            thresholds.append(threshtemp)
-    else:
-        thresholds = generate_thresholds(threshstart, threshstep, threshstepcount, len(arraylist))
+    arraylist = [(read_image_into_array(openImage(f[0])), f[1]) for f in filevalist]
 
     writestring = ""
     bestacc = 0
-    bestthresh = ""
+    bestthresh = None
 
     try:
-        #TODO: Refactor to allow use of multiprocessing.Pool.map -- need to reason about the output/logging
-        for thresh in thresholds:
-            start = dt.now()
-            accuracy, classification, outstring = classify_with_threshold(croparray, arraylist, searchdir,
-                                                                          searchstringsvals, thresh, nodata)
-            writestring = writestring + outstring
+        if len(thresholdlist) == 1:
+            writestring = "Only using a single threshold value--not iterating.\n"
+            bestthresh = thresholdlist[0]
+        else:
 
-            if accuracy > bestacc:
-                bestacc = accuracy
-                bestthresh = thresh
+            #TODO: Refactor to allow use of multiprocessing.Pool.map -- need to reason about the output/logging
+            for thresh in thresholdlist:
+                start = dt.now()
+                accuracy, classification, outstring = classify_with_threshold(croparray, arraylist,
+                                                                              searchstringsvals, thresh, nodata)
+                writestring = writestring + outstring
 
-            elapsed = dt.now() - start
-            toprint = [thresh, "{}:{}".format(elapsed.seconds, str(elapsed.microseconds).zfill(6)), accuracy, bestacc, bestthresh]
-            width = (6 * len(arraylist))
-            sys.stdout.write("Thresh: {: <{width}}   Time: {}   Acc: {: <14}   Best: {: <14} at {}\r".format(*toprint, width=width))
-            sys.stdout.flush()
+                if accuracy > bestacc:
+                    bestacc = accuracy
+                    bestthresh = thresh
+
+                elapsed = dt.now() - start
+                toprint = [thresh, "{}:{}".format(elapsed.seconds, str(elapsed.microseconds).zfill(6)), accuracy, bestacc, bestthresh]
+                width = (6 * len(arraylist))
+                sys.stdout.write("Thresh: {: <{width}}   Time: {}   Acc: {: <14}   Best: {: <14} at {}\r".format(*toprint, width=width))
+                sys.stdout.flush()
 
     except Exception as e:
         import traceback
@@ -608,31 +619,37 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
 
     finally:
+        outputaccfromthisclassification = False
 
-        with open(accuracyreport, 'w') as text:
-            text.write("Classification using curves from {0}".format(searchdir))
-            text.write("{0}\nBest:\n{1} {2}".format(writestring, bestthresh, bestacc))
+        if bestacc != 0:
+            with open(accuracyreport, 'w') as text:
+                text.write("Classification using fit images from {0}".format(os.path.dirname(filevalist[0][0])))
+                text.write("{0}\nBest:\n{1} {2}".format(writestring, bestthresh, bestacc))
+            print("\n", bestthresh, bestacc)
+        else:
+            outputaccfromthisclassification = True
 
-        print "\n", bestthresh, bestacc
-
-        accuracy, classification, outstring = classify_with_threshold(croparray, arraylist, searchdir,
+        accuracy, classificationarray, outstring = classify_with_threshold(croparray, arraylist,
                                                                       searchstringsvals, bestthresh, nodata)
+
+        writestring = writestring + outstring
+
+        accuracyarray = find_correct_incorrect_raster(croparray, classificationarray, ndvalue=nodata)
+
+        # TODO: This repeat smells. Fix it.
+        if outputaccfromthisclassification:
+            with open(accuracyreport, 'w') as text:
+                text.write("Classification using fit images from {0}".format(os.path.dirname(filevalist[0][0])))
+                text.write("{0}\nBest:\n{1} {2}".format(writestring, bestthresh, bestacc))
+                print("\n", bestthresh, bestacc)
 
         driver = gdal.GetDriverByName("ENVI")
         driver.Register()
 
-        outds = driver.Create(classificationimage, cropimg.cols, cropimg.rows, 1, GDT_Int16)
-        outds.SetGeoTransform(cropimg.geotransform)
-        outds.SetProjection(cropimg.projection)
-        outband = outds.GetRasterBand(1)
-        outband.WriteArray(classification, 0, 0)
-        outband.SetNoDataValue(nodata)
-        outband.FlushCache()
+        write_output_image(cropimgproperties, classificationimage, classificationarray, nodata)
+        write_output_image(cropimgproperties, accuracyimage, accuracyarray, nodata)
 
-        outband = ""
-        outds = ""
-
-        print "outputted"
+        print("outputted")
 
         return 0
 
