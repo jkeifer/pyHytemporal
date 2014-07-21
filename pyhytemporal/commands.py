@@ -1,10 +1,4 @@
-import os
 import click
-from imageFunctions import clip_raster_to_extent
-from utils import *
-from classification import *
-from signatureFunctions import get_sigs_in_dir
-from plotting import SignaturePlot
 
 
 def validate_value(ctx, param, value):
@@ -74,6 +68,11 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
     """
     #TODO Docstring
     #TODO Add Parameter Validation Callbacks as necessary
+    import os
+    from signatureFunctions import get_sigs_in_dir
+    from utils import create_output_dir
+    from imageFunctions import clip_raster_to_extent
+    from classification import phenological_classificaion
 
     signatures = get_sigs_in_dir(signaturedirectory, viname=vi)
 
@@ -119,6 +118,7 @@ def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfold
     Search directory for HDF MODIS files, get a VI from each HDF, and build single-date VI images in to a multi-date
     composite image.
     """
+    from classification import build_multiband_image
 
     build_multiband_image(imagedirectory, outputimagename, outputfoldername, vi, str(drivercode), ndvalue,
                           outputdir=outputdir)
@@ -148,6 +148,11 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
     Extracts temporal signatures for a set of point geometry shapefiles in a specified directory and outputs them to a
     set of .ref files in an output directory.
     """
+    import os
+    from plotting import SignaturePlot
+    from utils import find_files, create_output_dir
+    from signatureFunctions import get_sigs_in_dir
+    from classification import get_reference_curves
 
     if outputdir is None:
         outputdir = create_output_dir(os.path.dirname(image), "signatures", usetime=True)
@@ -176,30 +181,60 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
               default=None, help="Path to the output directory. Default is to use the directory containing the image.")
 @click.option('-v', '--valueofcropinimage', multiple=True, nargs=2, callback=validate_value,
               help="The class name and its value in the crop image used for the accuracy assessment. E.g. \"Corn 1\"")
+@click.option('-t', '--thresholds', multiple=True, default=[],
+              help="A list of threshold values to use. Format each entry as a tuple in a python list with no spaces e.g. [(800,500,1200)]. Cannot be used with threshold stepping.")
 @click.option('-n', '--ndvalue', type=click.INT, default=-3000,
               help="The value for NODATA in the multidate image and output fit images. Default is -3000.")
 @click.option('-O', '--outputimagename', type=click.STRING, default=None,
               help="Name of the image to be created with the file extension. Default is the date and crop image name.")
-@click.option('--tstart', type=click.INT, default=500,
-              help="The threshold start value. Default is 500.")
-@click.option('--tstep', type=click.INT, default=100,
-              help="The threshold step value. Default is 100.")
-@click.option('--tstepcount', type=click.INT, default=10,
-              help="The number of threshold steps. Default is 10.")
+@click.option('--tstart', type=click.INT,
+              help="The threshold start value.")
+@click.option('--tstep', type=click.INT,
+              help="The threshold step value.")
+@click.option('--tstepcount', type=click.INT,
+              help="The number of threshold steps.")
 @click.option('--nocombo', is_flag=True,
               help="Does not find combination of threshold steps, but steps through a single threshold value applied to all fit images.")
 def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimagename, valueofcropinimage, tstart, tstep,
-             tstepcount, nocombo):
+             tstepcount, nocombo, thresholds):
     """
     Classify a multidate image and assess the accuracy of said classification.
     """
 
+    # import required functions
+    import os
+    from classification import get_fit_rasters, classify_and_assess_accuracy, generate_thresholds
+    from utils import create_output_dir
+
+    # get the fit rasters to use
+    filevallist = get_fit_rasters(fitimagedirectory)
+
+    # validate threshold parameters
+    if (tstart or tstep or tstepcount or nocombo) and thresholds:
+        raise click.BadParameter("Cannot use both a threshold list and stepping threshold options.")
+    elif thresholds:
+        for thresh in thresholds:
+            if len(thresh) != len(filevallist):
+                raise click.BadParameter("Length of threshold in threshold value list is not the same as the number of fit rasters. Counts must be equal.")
+            else:
+                pass
+    elif tstart and tstepcount and tstep:
+        # create threshold generator
+        if nocombo:
+            thresholds = []
+            for val in range(tstart, (tstepcount * tstep + tstart), tstep):
+                threshtemp = [val for item in filevallist]
+                thresholds.append(threshtemp)
+        else:
+            thresholds = generate_thresholds(tstart, tstep, tstepcount, len(filevallist))
+    else:
+        raise click.BadParameter("Threshold options incomplete or otherwise incorrectly used.")
+
     if outputdirectory is None:
         outputdirectory = create_output_dir(os.path.dirname(fitimagedirectory), "classification", usetime=True)
 
-    classify_and_assess_accuracy(fitimagedirectory, cropimage, valueofcropinimage, ndvalue,
-                                 outputdir=outputdirectory, classifiedimagename=outputimagename, threshstart=tstart,
-                                 threshstep=tstep, threshstepcount=tstepcount, singlethresh=nocombo)
+    classify_and_assess_accuracy(outputdirectory, cropimage, valueofcropinimage, filevallist, ndvalue, thresholds,
+                                 classifiedimagename=outputimagename)
 
 
 cli.add_command(find_fit)
