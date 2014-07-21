@@ -553,8 +553,7 @@ def classify_with_threshold(croparray, arraylist, searchstringsvals, thresh, nod
 
 
 def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, filevalist, nodata, thresholdlist,
-                                 classifiedimagename=None, plotcorrectpx=False, plotincorrectpx=False,
-                                 numberofprocesses=4):
+                                 classifiedimagename=None, numberofprocesses=4):
     """
     """
     #TODO Docstring
@@ -569,12 +568,6 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
     classificationimage = os.path.join(outputdir, classifiedimagename + ".tif")
     accuracyimage = os.path.join(outputdir, classifiedimagename + "_accuracy.tif")
     accuracyreport = os.path.join(outputdir, classifiedimagename + ".txt")
-
-    if plotcorrectpx:
-        correctpxplot = Plot(outputdir, "correctpxplot")
-
-    if plotincorrectpx:
-        incorrectpxplot = Plot(outputdir, "incorrectpxplot")
 
     #np.set_printoptions(threshold=np.nan)  # For debug: Makes numpy print whole contents of an array.
     #Crop image is constant for all iterations
