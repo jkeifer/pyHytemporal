@@ -584,7 +584,7 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
 
     try:
         if len(thresholdlist) == 1:
-            writestring = "Only using a single threshold value--not iterating.\n"
+            writestring = "\n\n**Only using a single threshold value--not iterating.**\n\n"
             bestthresh = thresholdlist[0]
         else:
 
@@ -612,15 +612,6 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
 
     finally:
-        outputaccfromthisclassification = False
-
-        if bestacc != 0:
-            with open(accuracyreport, 'w') as text:
-                text.write("Classification using fit images from {0}".format(os.path.dirname(filevalist[0][0])))
-                text.write("{0}\nBest:\n{1} {2}".format(writestring, bestthresh, bestacc))
-            print("\n{0}, {1}".format(bestthresh, bestacc))
-        else:
-            outputaccfromthisclassification = True
 
         accuracy, classificationarray, outstring = classify_with_threshold(croparray, arraylist,
                                                                       searchstringsvals, bestthresh, nodata)
@@ -630,11 +621,11 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
         accuracyarray = find_correct_incorrect_array(croparray, classificationarray, ndvalue=nodata)
 
         # TODO: This repeat smells. Fix it.
-        if outputaccfromthisclassification:
-            with open(accuracyreport, 'w') as text:
-                text.write("Classification using fit images from {0}".format(os.path.dirname(filevalist[0][0])))
-                text.write("{0}\nBest:\n{1} {2}".format(writestring, bestthresh, bestacc))
-                print("\n", bestthresh, bestacc)
+        with open(accuracyreport, 'w') as text:
+            text.write("Classification using fit images from {0}".format(os.path.dirname(filevalist[0][0])))
+            text.write("{0}\nBest:\n{1} {2}".format(writestring, bestthresh, accuracy))
+
+        print("\n{0}, {1}".format(bestthresh, accuracy))
 
         driver = gdal.GetDriverByName("ENVI")
         driver.Register()
