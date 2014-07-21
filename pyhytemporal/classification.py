@@ -618,7 +618,7 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
             with open(accuracyreport, 'w') as text:
                 text.write("Classification using fit images from {0}".format(os.path.dirname(filevalist[0][0])))
                 text.write("{0}\nBest:\n{1} {2}".format(writestring, bestthresh, bestacc))
-            print("\n", bestthresh, bestacc)
+            print("\n{0}, {1}".format(bestthresh, bestacc))
         else:
             outputaccfromthisclassification = True
 
@@ -627,7 +627,7 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
 
         writestring = writestring + outstring
 
-        accuracyarray = find_correct_incorrect_raster(croparray, classificationarray, ndvalue=nodata)
+        accuracyarray = find_correct_incorrect_array(croparray, classificationarray, ndvalue=nodata)
 
         # TODO: This repeat smells. Fix it.
         if outputaccfromthisclassification:
