@@ -598,7 +598,8 @@ def classify_and_assess_accuracy(searchdir, cropimgpath, searchstringsvals, noda
             elapsed = dt.now() - start
             toprint = [thresh, "{}:{}".format(elapsed.seconds, str(elapsed.microseconds).zfill(6)), accuracy, bestacc, bestthresh]
             width = (6 * len(arraylist))
-            print "Thresh: {: <{width}}   Time: {}   Acc: {: <14}   Best: {: <14} at {}\r".format(*toprint, width=width),
+            sys.stdout.write("Thresh: {: <{width}}   Time: {}   Acc: {: <14}   Best: {: <14} at {}\r".format(*toprint, width=width))
+            sys.stdout.flush()
 
     except Exception as e:
         import traceback
