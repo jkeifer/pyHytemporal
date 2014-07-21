@@ -181,7 +181,7 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
               default=None, help="Path to the output directory. Default is to use the directory containing the image.")
 @click.option('-v', '--valueofcropinimage', multiple=True, nargs=2, callback=validate_value,
               help="The class name and its value in the crop image used for the accuracy assessment. E.g. \"Corn 1\"")
-@click.option('-t', '--thresholds', multiple=True, default=[],
+@click.option('-t', '--thresholds', default=[], type=click.STRING,
               help="A list of threshold values to use. Format each entry as a tuple in a python list with no spaces e.g. [(800,500,1200)]. Cannot be used with threshold stepping.")
 @click.option('-n', '--ndvalue', type=click.INT, default=-3000,
               help="The value for NODATA in the multidate image and output fit images. Default is -3000.")
@@ -207,12 +207,13 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
     from utils import create_output_dir
 
     # get the fit rasters to use
-    filevallist = get_fit_rasters(fitimagedirectory)
+    filevallist = get_fit_rasters(fitimagedirectory, valueofcropinimage)
 
     # validate threshold parameters
     if (tstart or tstep or tstepcount or nocombo) and thresholds:
         raise click.BadParameter("Cannot use both a threshold list and stepping threshold options.")
     elif thresholds:
+        thresholds = eval(thresholds)
         for thresh in thresholds:
             if len(thresh) != len(filevallist):
                 raise click.BadParameter("Length of threshold in threshold value list is not the same as the number of fit rasters. Counts must be equal.")
