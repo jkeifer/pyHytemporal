@@ -72,7 +72,7 @@ class Plot(object):
 
 
 class PixelPlot(Plot):
-    def add_pixel_plot(self, pixelObject, color=None, closefigure=False):
+    def add_pixel(self, pixelObject, color=None, closefigure=False):
 
         if color:
             color = '{0}-'.format(color)
@@ -131,3 +131,28 @@ class SignaturePlot(Plot):
         if closeplot:
             self.close_plot()
 
+
+def plot_correct_incorrect_px(accuracyimage, multidateimageclipped, cropimage, classifiedimage, outputdir, plotcorrectpx=True, plotincorrectpx=True):
+    # TODO: Finish below
+    """Pesudocode:
+
+    open accuracyimage as array
+    open multidateimageclipped as array
+    open cropimage as array
+    open classifiedimage as array
+
+    for row in accuracyimage
+        for col in accuracyimage
+            if accuracyimage[row, col] == 1 and plotcorrectpx:
+
+
+
+    okay, need to create pixel objects for each non-nodata pixel in the accuracy image, get truth value and classified id,
+    save into two lists, one of correct and one of incorrect
+    plot each list"""
+
+    if plotcorrectpx:
+        correctpxplot = PixelPlot(outputdir, "correctpxplot")
+
+    if plotincorrectpx:
+        incorrectpxplot = PixelPlot(outputdir, "incorrectpxplot")
