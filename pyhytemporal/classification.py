@@ -429,7 +429,6 @@ def generate_thresholds(start, step, numberofsteps, lengthofelement):
 
 
 def find_correct_incorrect_array(trutharray, classificationarray, ndvalue=-3000):
-    #accuracyarray = numpy.empty(shape=classificationarray.shape, )
     accuracyarray = numpy.array(classificationarray.__eq__(trutharray), dtype=numpy.int_)  # sets acc array to 1 where equal, 0 where not
     accuracyarray[classificationarray == ndvalue] = ndvalue  # where classification contains nodata, set acc to nodata
     accuracyarray[trutharray == ndvalue] = ndvalue  # where trutharray contains nodata, set acc to nodata
