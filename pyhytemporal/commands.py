@@ -1,4 +1,5 @@
 import click
+from pyhytemporal.signatureFunctions import get_reference_curves
 
 
 def validate_value(ctx, param, value):
@@ -152,7 +153,6 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
     from plotting import SignaturePlot
     from utils import find_files, create_output_dir
     from signatureFunctions import get_sigs_in_dir
-    from classification import get_reference_curves
 
     if outputdir is None:
         outputdir = create_output_dir(os.path.dirname(image), "signatures", usetime=True)
