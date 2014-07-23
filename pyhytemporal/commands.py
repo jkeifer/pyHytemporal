@@ -203,8 +203,8 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
 
     # import required functions
     import os
-    from classification import get_fit_rasters, classify_and_assess_accuracy, generate_thresholds
     from utils import create_output_dir
+    from pyhytemporal.classify import classify_and_assess_accuracy, generate_thresholds, get_fit_rasters
 
     # get the fit rasters to use
     filevallist = get_fit_rasters(fitimagedirectory, valueofcropinimage)
