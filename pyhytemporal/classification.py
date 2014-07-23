@@ -1,18 +1,10 @@
 import multiprocessing
 from datetime import datetime as dt
-
-from scipy import interpolate
-
-from scipy import optimize
-
+from scipy import interpolate, optimize
 from imageFunctions import *
-
 from vectorFunctions import get_px_coords_from_points
 from utils import *
 from core import *
-
-
-lock = multiprocessing.Lock()
 
 #gdal.UseExceptions()
 
