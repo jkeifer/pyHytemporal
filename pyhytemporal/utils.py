@@ -1,7 +1,5 @@
 import os
 
-############## FUNCTIONS ##############
-
 
 def find_files(searchdir, ext, recursive=True):
     foundfiles = []
