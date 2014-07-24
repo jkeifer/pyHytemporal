@@ -1,8 +1,10 @@
+import os
 import numpy
 from osgeo import gdal
 from osgeo.gdalconst import *
+from osgeo.gdalconst import GA_ReadOnly
 from core import gdalObject, gdalProperties
-from utils import change_geotransform
+from utils import change_geotransform, create_output_dir, find_files
 
 
 def createNewImage(outfilepath, cols, rows, bands, datatype,
@@ -198,3 +200,109 @@ def create_test_image(imagepath, imagename, drivercode="ENVI"):
     image = ""
 
     return 0
+
+
+def get_hdf_subdatasets(hdfpath):
+    #TODO docstrings
+
+    hdf = gdal.Open(hdfpath, GA_ReadOnly)
+
+    if hdf is None:
+        raise Exception("Could not open " + hdfpath)
+
+    subdatasets = []
+    hdfsds = hdf.GetSubDatasets()
+
+    for data in hdfsds:
+        subdatasets.append((data[0], data[0].split(" ")[-1]))
+
+    hdf = ""
+
+    return subdatasets
+
+
+def build_multiband_image(rootDIR, outName, newfoldername, find, drivercode, ndvalue, outputdir=None):
+    """
+    ##Set Args##
+    rootdirectory = "/Users/phoetrymaster/Documents/School/Geography/Thesis/Data/MODIS_KANSAS_2012/"
+    outputfilename = "test"
+    newfoldername = "kansas"
+    VItofind = "EVI"
+    drivercode = "ENVI"
+    nodatavalue = -3000
+    #projection = "PROJCS[\"Sinusoidal\",GEOGCS[\"GCS_Undefined\",DATUM[\"D_Undefined\",
+                   SPHEROID[\"User_Defined_Spheroid\",6371007.181,0.0]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",
+                   0.017453292519943295]],PROJECTION[\"Sinusoidal\"],PARAMETER[\"False_Easting\",0.0],
+                   PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",0.0],UNIT[\"Meter\",1.0]]"
+
+    sys.exit(build_multiband_image(rootdirectory, outputfilename, newfoldername, VItofind, drivercode, nodatavalue)
+    """
+
+    #TODO docstrings
+
+    if outputdir is None:
+        outputdir = rootDIR
+
+    outdir = create_output_dir(outputdir, newfoldername)
+    print "\nOutputting files to : {0}".format(outdir)
+
+    print "\nFinding HDF files in directory/subfolders: {0}".format(rootDIR)
+    hdfs = find_files(rootDIR, ".hdf")
+    print "\tFound {0} files.".format(len(hdfs))
+
+    print "\nGetting images to process of type {0}...".format(find)
+    toprocess = []
+
+    for hdf in hdfs:
+        sds = get_hdf_subdatasets(hdf)
+        for ds in sds:
+            if find.upper() in ds[1].upper():
+                toprocess.append(ds[0])
+                print "\t\t{0}".format(ds[0])
+
+    bands = len(toprocess)
+    print "\tFound {0} images of type {1}.".format(bands, find)
+
+    #print "\nGetting output parameters..."
+    #rows, cols, datatype, geotransform, projection = open_image(toprocess[0])
+    #print "\tParameters: rows: {0}, cols: {1}, datatype: {2}, projection: {3}.".format(rows, cols, datatype, projection)
+
+    outfile = os.path.join(outdir, outName)
+    print "\nOutput file is: {0}".format(outfile)
+
+    ## Create output file from first file to process ##
+    template = openImage(toprocess[0])
+    templateproperties = gdalProperties(template)
+    outds = copySchemaToNewImage(templateproperties, outfile, numberofbands=bands, drivername=drivercode)
+    template = ""
+    del template
+    print "\tCreated output file."
+
+    print"\nAdding bands to output file..."
+    for i in range(0, bands):
+        print "\tProcessing band {0} of {1}...".format(i + 1, bands)
+        print toprocess[i]
+        image = openImage(toprocess[i])
+        band = image.GetRasterBand(1)
+
+        outband = outds.GetRasterBand(i + 1)
+
+        print "\t\tReading band data to array..."
+        data = band.ReadAsArray(0, 0, templateproperties.cols, templateproperties.rows)
+
+        print "\t\tWriting band data to output band..."
+        outband.WriteArray(data, 0, 0)
+        outband.SetNoDataValue(ndvalue)
+        outband.FlushCache()
+
+        outband = ""
+        del data, outband
+        band = ""
+        image = ""
+
+    print "\tFinished adding bands to output file."
+
+    outds = ""
+    del outds
+
+    print "\nProcess completed."
