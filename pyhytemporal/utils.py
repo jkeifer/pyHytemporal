@@ -73,14 +73,3 @@ def change_geotransform(originaltransform, newxmin, newymin):
     newtransform[3] += newtransform[5] * newymin
 
     return tuple(newtransform)
-
-
-
-
-
-
-
-
-
-
-
