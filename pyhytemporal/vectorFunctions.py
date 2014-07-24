@@ -3,8 +3,6 @@ import os
 from osgeo import ogr
 from core import gdalObject, ShapeDataError
 
-__author__ = 'phoetrymaster'
-
 
 def load_points(shapefile):
     """
