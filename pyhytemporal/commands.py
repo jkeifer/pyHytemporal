@@ -1,5 +1,4 @@
 import click
-from pyhytemporal.signatureFunctions import get_reference_curves
 
 
 def validate_value(ctx, param, value):
@@ -73,7 +72,7 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
     from signatureFunctions import get_sigs_in_dir
     from utils import create_output_dir
     from imageFunctions import clip_raster_to_extent
-    from classification import phenological_classificaion
+    from fitting import fit_refs_to_image
 
     signatures = get_sigs_in_dir(signaturedirectory, viname=vi)
 
@@ -93,7 +92,7 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
     else:
         imagetoprocess = image
 
-    phenological_classificaion(imagetoprocess, outdir, signatures, startdoy, doyinterval,
+    fit_refs_to_image(imagetoprocess, outdir, signatures, startdoy, doyinterval,
                                temporalshift, threshold=threshold, ndvalue=ndvalue, subset=subset, meantype=meantype,
                                workers=numberofprocesses)
 
@@ -119,7 +118,7 @@ def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfold
     Search directory for HDF MODIS files, get a VI from each HDF, and build single-date VI images in to a multi-date
     composite image.
     """
-    from classification import build_multiband_image
+    from imageFunctions import build_multiband_image
 
     build_multiband_image(imagedirectory, outputimagename, outputfoldername, vi, str(drivercode), ndvalue,
                           outputdir=outputdir)
@@ -152,7 +151,7 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
     import os
     from plotting import SignaturePlot
     from utils import find_files, create_output_dir
-    from signatureFunctions import get_sigs_in_dir
+    from signatureFunctions import get_sigs_in_dir, get_reference_curves
 
     if outputdir is None:
         outputdir = create_output_dir(os.path.dirname(image), "signatures", usetime=True)
@@ -204,7 +203,7 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
     # import required functions
     import os
     from utils import create_output_dir
-    from pyhytemporal.classify import classify_and_assess_accuracy, generate_thresholds, get_fit_rasters
+    from classify import classify_and_assess_accuracy, generate_thresholds, get_fit_rasters
 
     # get the fit rasters to use
     filevallist = get_fit_rasters(fitimagedirectory, valueofcropinimage)
