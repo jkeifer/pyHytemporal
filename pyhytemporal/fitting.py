@@ -7,7 +7,7 @@ from scipy import interpolate, optimize
 from core import gdalProperties
 from imageFunctions import copySchemaToNewImage, openImage, read_image_into_array
 from utils import band_number_to_doy
-from vectorFunctions import get_px_coords_from_points
+from vectorFunctions import get_px_coords_from_shapefile
 
 
 def get_sort_dates_values(vals, threshold=None):
@@ -224,7 +224,7 @@ def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, star
         array = read_image_into_array(image)  # Read all bands into a 3d array representing the image stack (x, y, time orientation)
 
         if subset:
-            subset = get_px_coords_from_points(imagetoprocess, subset)
+            subset = get_px_coords_from_shapefile(imagetoprocess, subset)
 
         processes = []
         for signature in signaturecollection.signatures:
