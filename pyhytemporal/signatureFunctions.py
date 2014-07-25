@@ -2,8 +2,8 @@ import os
 import numpy
 from osgeo import gdal
 from osgeo.gdalconst import *
-from pyhytemporal.utils import band_number_to_doy
-from pyhytemporal.vectorFunctions import get_px_coords_from_points
+from utils import band_number_to_doy
+from vectorFunctions import get_px_coords_from_shapefile
 from utils import find_files
 from core import signatureCollection
 
@@ -108,7 +108,7 @@ def get_reference_curves(image, refstoget, startdoy, imageinterval, outdir="", f
 
     for shapefile in refstoget:
         cropname = os.path.splitext(os.path.basename(shapefile))[0]
-        locs = get_px_coords_from_points(image, shapefile)
+        locs = get_px_coords_from_shapefile(image, shapefile)
         refvals = get_crop_pixel_values(image, locs)
         comment = "Generated from {0} by get_crop_pixel_values version 0.1.".format(image)
         write_refs_to_txt(cropname, refvals, startdoy, imageinterval, outdir, comment=comment, postfix=filepostfix)
