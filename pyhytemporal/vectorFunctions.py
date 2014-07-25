@@ -1,7 +1,7 @@
 from math import floor
 import os
 from osgeo import ogr
-from core import gdalObject, ShapeDataError
+from core import gdalProperties, ShapeDataError
 
 
 def load_points(shapefile):
@@ -45,6 +45,22 @@ def load_points(shapefile):
     shapeData.Destroy()
     # Return
     return points
+
+
+def read_shapefile_to_points(shapefile):
+    shapeData = ogr.Open(validateShapePath(shapefile))
+
+    validateShapeData(shapeData)
+
+    layer = shapeData.GetLayer()
+    extent = layer.GetExtent()
+
+    poly = layer.GetFeature(0)
+
+    geom = poly.GetGeometryRef()
+    pts = geom.GetGeometryRef(0)
+
+    return extent, pts
 
 
 def get_ref_from_shapefile(shapefile):
@@ -109,7 +125,31 @@ def check_spatial_refs(srs1, srs2):
         return True
 
 
-def get_px_coords_from_points(raster, shapefile):
+def get_px_coords_from_geographic_coords(gdalPropertiesObject, pointcoords):
+    """
+
+    """
+    #TODO docstrings
+
+    image = gdalPropertiesObject
+
+    # get raster edge coords
+    left = image.geotransform[0]
+    top = image.geotransform[3]
+    right = image.cols * image.geotransform[1] + image.geotransform[0]
+    bottom = image.rows * image.geotransform[5] + image.geotransform[3]
+
+    # calc px coords for each set of point coords
+    pxcoords = []
+    for coords in pointcoords:
+        col = int(floor(image.cols * (coords[0] - left) / (right - left)))
+        row = int(floor(image.rows * (coords[1] - top) / (bottom - top)))
+        pxcoords.append((row, col))
+
+    return pxcoords
+
+
+def get_px_coords_from_shapefile(raster, shapefile):
     """
     Takes geographic coordinates from a shapefile and finds the corresponding pixel coordinates on a raster.
 
@@ -117,33 +157,29 @@ def get_px_coords_from_points(raster, shapefile):
     #rst = "/Users/phoetrymaster/Documents/School/Geography/Thesis/Data/polygonclip_20130929223024_325071991/resampled/newclips/2012clip1.tif"
     shp = "/Users/phoetrymaster/Documents/School/Geography/Thesis/Data/MODIS_KANSAS_2007-2012/SampleAreas/samplepoints2012_clip1_new.shp"
 
-    print get_px_coords_from_points(rst, shp)
+    print get_px_coords_from_shapefile(rst, shp)
     """
     #TODO docstrings
 
+    from imageFunctions import openImage
+
+    # load points from shapefile and get georef
     pointcoords = load_points(shapefile)
     ref1 = get_ref_from_shapefile(shapefile)
 
-    image = gdalObject()
-    image.open(raster)
-    image.close()
+    # open, close image file and get properties
+    image = openImage(raster)
+    imageproperties = gdalProperties(image)
+    image = ""
 
-    referror = check_spatial_refs(ref1, image.projection)
+    # check spatial refs
+    referror = check_spatial_refs(ref1, imageproperties.projection)
 
     if referror:
         print "WARNING: Spatial Reference of raster does not match points shapefile. Output may not be as expected. For best resutls ensure reference systems are identical."
         #TODO Change to use warnings module
 
-    #Raster edge coords
-    left = image.geotransform[0]
-    top = image.geotransform[3]
-    right = image.cols * image.geotransform[1] + image.geotransform[0]
-    bottom = image.rows * image.geotransform[5] + image.geotransform[3]
-
-    pxcoords = []
-    for coords in pointcoords:
-        col = int(floor(image.cols * (coords[0] - left) / (right - left)))
-        row = int(floor(image.rows * (coords[1] - top) / (bottom - top)))
-        pxcoords.append((row, col))
+    # get pixel coords from point coords
+    pxcoords = get_px_coords_from_geographic_coords(imageproperties, pointcoords)
 
     return pxcoords
