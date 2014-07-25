@@ -71,7 +71,7 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
     import os
     from signatureFunctions import get_sigs_in_dir
     from utils import create_output_dir
-    from imageFunctions import clip_raster_to_extent
+    from imageFunctions import clip_raster_to_extent, clip_and_mask_raster_with_shapefile
     from fitting import fit_refs_to_image
 
     signatures = get_sigs_in_dir(signaturedirectory, viname=vi)
@@ -82,8 +82,9 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
     outdir = create_output_dir(outputdir, outputfoldername)
 
     if cliptoshapeextent:
-        #TODO: Need to write a method to clip to the extent of a shapefile
-        imagetoprocess = image
+        imagename, ext = os.path.splitext(os.path.basename(image))
+        outimage = os.path.join(outdir, imagename + "_clip" + ext)
+        imagetoprocess = clip_and_mask_raster_with_shapefile(image, cliptoshapeextent, outimage)
     elif cliptopixelextent:
         imagename, ext = os.path.splitext(os.path.basename(image))
         outimage = os.path.join(outdir, imagename + "_clip" + ext)
