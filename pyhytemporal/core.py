@@ -256,6 +256,7 @@ class gdalProperties(object):
         self.bands = gdalImage.RasterCount
         band = gdalImage.GetRasterBand(1)
         self.datatype = band.DataType
+        self.nodata = band.GetNoDataValue()
         del band
         self.geotransform = gdalImage.GetGeoTransform()
         self.projection = gdalImage.GetProjection()
@@ -278,7 +279,7 @@ class gdalProperties(object):
 
         properties = {"Rows": self.rows, "Cols": self.cols, "Number of bands": self.bands,
                       "GDAL Datatype": self.datatype, "Geotransform": self.geotransform, "Projection": self.projection,
-                      "Start Day-of-year": self.startdoy, "Image Interval (days)": self.imageinterval}
+                      "Start Day-of-year": self.startdoy, "Image Interval (days)": self.imageinterval, "NoData Value": self.nodata}
 
         return properties
 
