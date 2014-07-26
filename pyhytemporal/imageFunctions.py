@@ -1,10 +1,14 @@
 import os
+import subprocess
 import numpy
+import sys
 from osgeo import gdal
 from osgeo.gdalconst import *
 from osgeo.gdalconst import GA_ReadOnly
+from osgeo import osr
 from core import gdalObject, gdalProperties
 from utils import change_geotransform, create_output_dir, find_files
+from vectorFunctions import get_ref_from_shapefile, read_shapefile_to_points, get_px_coords_from_geographic_coords, get_geographic_coords_from_px_coords
 
 
 def createNewImage(outfilepath, cols, rows, bands, datatype,
@@ -159,6 +163,126 @@ def clip_raster_to_extent(inraster, outraster, xmin, ymin, xextent, yextent):
     outds = ""
 
     return outraster
+
+
+def clip_and_mask_raster_with_shapefile(inraster, shapefile, outraster):
+    """
+
+    """
+    # TODO Docstring
+
+    from PIL import Image, ImageDraw
+
+    raster = openImage(inraster)
+    raster_properties = gdalProperties(raster)
+    print 2
+
+    rasterwkt = raster.GetProjectionRef()
+
+    oSRSop = osr.SpatialReference()
+    oSRSop.ImportFromWkt(rasterwkt)
+    print oSRSop
+    print 3
+
+    shpextent, shppoints = read_shapefile_to_points(shapefile, oSRSop)
+    print 4
+
+    print shppoints
+    print shppoints.GetPointCount()
+    points = []
+    for p in xrange(shppoints.GetPointCount()):
+        points.append(shppoints.GetPoint(p))
+
+    print points
+
+    print 5
+    pnts = numpy.array(points).transpose()
+    print pnts
+    #pnts_min_x = numpy.min(pnts[0])
+    #pnts_max_x = numpy.max(pnts[0])
+    #pnts_min_y = numpy.min(pnts[1])
+    #pnts_max_y = numpy.max(pnts[1])
+
+    cornerpnts = [(shpextent[0], shpextent[3]),  # top left
+                  (shpextent[1], shpextent[2])]  # bottom right
+
+    # TODO change this to use the function from vectorFunctions
+    pixel, line = world2Pixel(raster_properties.geotransform, pnts[0], pnts[1])
+
+    print 5
+    rasterPoly = Image.new("L", (raster.RasterXSize, raster.RasterYSize), 1)
+    rasterize = ImageDraw.Draw(rasterPoly)
+    listdata = [(pixel[i], line[i]) for i in xrange(len(pixel))]
+    rasterize.polygon(listdata, 0)
+    mask = 1 - PIL_image_to_array(rasterPoly)
+    print 6
+
+    # find extent of new image by getting corner coords in image and subtract mins from maxes
+
+    pxcoords = get_px_coords_from_geographic_coords(raster_properties, cornerpnts)
+
+    ymin, xmin = pxcoords[0]
+    ymax, xmax = pxcoords[1]
+    xextent = xmax - xmin
+    yextent = ymax - ymin
+
+
+    geotransform_coords = get_geographic_coords_from_px_coords(raster_properties, [pxcoords[0]])[0]
+
+    print(shpextent)
+    print geotransform_coords
+    newgeotransform = list(raster_properties.geotransform)
+    newgeotransform[0], newgeotransform[3] = geotransform_coords[0], geotransform_coords[1]
+    print(raster_properties.geotransform)
+    print(newgeotransform)
+
+    outds = copySchemaToNewImage(raster_properties, outraster, cols=xextent, rows=yextent, geotransform=newgeotransform)
+
+    for i in range(1, raster_properties.bands + 1):
+        band = raster.GetRasterBand(i)
+        outband = outds.GetRasterBand(i)
+
+        nodatavalue = band.GetNoDataValue()
+        data = band.ReadAsArray(xmin, ymin, xextent, yextent)
+        data[mask[ymin:ymax, xmin:xmax] == 0] = raster_properties.nodata
+
+        outband.WriteArray(data, 0, 0)
+        outband.SetNoDataValue(nodatavalue)
+        outband.FlushCache()
+
+        del data, outband, band
+
+    raster = ""
+    outds = ""
+
+    return outraster
+
+
+def world2Pixel(geoMatrix, x, y):
+    """
+    Uses a gdal geomatrix (gdal.GetGeoTransform()) to calculate the pixel location of a geospatial coordinate
+    """
+
+    ulX = geoMatrix[0]
+    ulY = geoMatrix[3]
+    xDist = geoMatrix[1]
+    yDist = geoMatrix[5]
+    rtnX = geoMatrix[2]
+    rtnY = geoMatrix[4]
+    pixel = numpy.round((x - ulX) / xDist).astype(numpy.int)
+    line = numpy.round((ulY - y) / xDist).astype(numpy.int)
+
+    return pixel, line
+
+
+def PIL_image_to_array(image):
+    """
+    Converts a Python Imaging Library array to a numpy array.
+    """
+    a = numpy.fromstring(image.tostring(),'b')
+    a.shape = image.im.size[1], image.im.size[0]
+
+    return a
 
 
 def read_image_into_array(gdalimage):
