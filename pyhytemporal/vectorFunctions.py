@@ -1,6 +1,7 @@
 from math import floor
 import os
 from osgeo import ogr
+from osgeo import osr
 from core import gdalProperties, ShapeDataError
 
 
@@ -47,20 +48,24 @@ def load_points(shapefile):
     return points
 
 
-def read_shapefile_to_points(shapefile):
+def read_shapefile_to_points(shapefile, outSpatialRef=None):
     shapeData = ogr.Open(validateShapePath(shapefile))
 
-    validateShapeData(shapeData)
-
     layer = shapeData.GetLayer()
-    extent = layer.GetExtent()
 
-    poly = layer.GetFeature(0)
+    poly = layer.GetNextFeature()
 
     geom = poly.GetGeometryRef()
-    pts = geom.GetGeometryRef(0)
 
-    return extent, pts
+    if outSpatialRef:
+        inSpatialRef = get_ref_from_shapefile(shapefile)
+        coordTrans = osr.CoordinateTransformation(inSpatialRef, outSpatialRef)
+        geom.Transform(coordTrans)
+
+    extent = geom.GetEnvelope()
+    points = geom.GetGeometryRef(0)
+
+    return extent, points.Clone()
 
 
 def get_ref_from_shapefile(shapefile):
@@ -93,9 +98,7 @@ def getSpatialReferenceFromProj4(proj4):
     """Return GDAL spatial reference object from proj4 string"""
     #TODO: docstrings
 
-    spatialReference = ogr.SpatialReference()
-    spatialReference.ImportFromProj4(proj4)
-    return spatialReference
+    return osr.SpatialReference().ImportFromProj4(proj4)
 
 
 def validateShapePath(shapePath):
@@ -147,6 +150,31 @@ def get_px_coords_from_geographic_coords(gdalPropertiesObject, pointcoords):
         pxcoords.append((row, col))
 
     return pxcoords
+
+
+def get_geographic_coords_from_px_coords(gdalPropertiesObject, pxcoords):
+    """
+    uses (row, col) format
+    """
+    #TODO docstrings
+
+    image = gdalPropertiesObject
+
+    # get raster edge coords
+    left = image.geotransform[0]
+    top = image.geotransform[3]
+    horz_px_size = image.geotransform[1]
+    vert_px_size = image.geotransform[5]
+
+
+    # calc geo coords for each set of px coords
+    pointcoords = []
+    for coord in pxcoords:
+        x = left + coord[1] * horz_px_size
+        y = top + coord[0] * vert_px_size
+        pointcoords.append((x, y))
+
+    return pointcoords
 
 
 def get_px_coords_from_shapefile(raster, shapefile):
