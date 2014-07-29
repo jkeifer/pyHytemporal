@@ -8,6 +8,8 @@ from pyhytemporal.core import gdalProperties
 from pyhytemporal.imageFunctions import openImage, read_image_into_array, copySchemaToNewImage
 
 
+OTHER_VALUE = 0
+
 def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, filevalist, nodata, thresholdlist,
                                  classifiedimagename=None, numberofprocesses=4):
     """
@@ -212,9 +214,15 @@ def classify_with_threshold(croparray, arraylist, searchstringsvals, thresh, nod
 
 
 def find_correct_incorrect_array(trutharray, classificationarray, ndvalue=-3000):
+    uniquevals = set(classificationarray)
+
+    if OTHER_VALUE in uniquevals:
+        uniquevals.remove(OTHER_VALUE)
+
     accuracyarray = numpy.array(classificationarray.__eq__(trutharray), dtype=numpy.int_)  # sets acc array to 1 where equal, 0 where not
     accuracyarray[classificationarray == ndvalue] = ndvalue  # where classification contains nodata, set acc to nodata
     accuracyarray[trutharray == ndvalue] = ndvalue  # where trutharray contains nodata, set acc to nodata
+    accuracyarray[accuracyarray == OTHER_VALUE and not trutharray in uniquevals] = 1
     return accuracyarray
 
 
