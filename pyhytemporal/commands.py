@@ -68,6 +68,10 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
     """
     #TODO Docstring
     #TODO Add Parameter Validation Callbacks as necessary
+
+    if cliptopixelextent and cliptoshapeextent:
+        click.BadParameter("Cannot clip the image to both a shapefile and pixel extent. Choose one or the other.")
+
     import os
     from signatureFunctions import get_sigs_in_dir
     from utils import create_output_dir
