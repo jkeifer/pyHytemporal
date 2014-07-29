@@ -4,8 +4,8 @@ import sys
 import numpy
 from osgeo import gdal
 from osgeo.gdalconst import *
-from pyhytemporal.core import gdalProperties
-from pyhytemporal.imageFunctions import openImage, read_image_into_array, copySchemaToNewImage
+from core import gdalProperties
+from imageFunctions import openImage, read_image_into_array, copySchemaToNewImage
 
 
 OTHER_VALUE = 0
