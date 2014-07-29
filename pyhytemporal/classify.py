@@ -222,7 +222,7 @@ def find_correct_incorrect_array(trutharray, classificationarray, ndvalue=-3000)
     accuracyarray = numpy.array(classificationarray.__eq__(trutharray), dtype=numpy.int_)  # sets acc array to 1 where equal, 0 where not
     accuracyarray[classificationarray == ndvalue] = ndvalue  # where classification contains nodata, set acc to nodata
     accuracyarray[trutharray == ndvalue] = ndvalue  # where trutharray contains nodata, set acc to nodata
-    accuracyarray[accuracyarray == OTHER_VALUE and not trutharray in uniquevals] = 1
+    accuracyarray[classificationarray == OTHER_VALUE and not trutharray in uniquevals] = 1  # where classified is other and truth is other, set to correct (1)
     return accuracyarray
 
 
