@@ -214,15 +214,28 @@ def classify_with_threshold(croparray, arraylist, searchstringsvals, thresh, nod
 
 
 def find_correct_incorrect_array(trutharray, classificationarray, ndvalue=-3000):
-    uniquevals = set(classificationarray)
+    uniquevals = set(numpy.unique(classificationarray))
+
+    print uniquevals
 
     if OTHER_VALUE in uniquevals:
         uniquevals.remove(OTHER_VALUE)
 
+    if ndvalue in uniquevals:
+        uniquevals.remove(ndvalue)
+
     accuracyarray = numpy.array(classificationarray.__eq__(trutharray), dtype=numpy.int_)  # sets acc array to 1 where equal, 0 where not
+
+    otherarray = numpy.zeros_like(accuracyarray)
+    otherarray[classificationarray == OTHER_VALUE] = 1
+    for value in uniquevals:
+        otherarray[trutharray == value] = 0
+
+    accuracyarray[otherarray == 1] = 1   # where classified is other and truth is other, set to correct (1)
+
     accuracyarray[classificationarray == ndvalue] = ndvalue  # where classification contains nodata, set acc to nodata
     accuracyarray[trutharray == ndvalue] = ndvalue  # where trutharray contains nodata, set acc to nodata
-    accuracyarray[classificationarray == OTHER_VALUE and not trutharray in uniquevals] = 1  # where classified is other and truth is other, set to correct (1)
+
     return accuracyarray
 
 
