@@ -69,7 +69,7 @@ def find_fit(valsf, interpolatedreferencecurve, bestguess, fitmethod=None, bound
 
 
 def process_pixel(bestguess, col, cropname, doyinterval, fitmthd, array, interpolatedCurve, outarray, row,
-                  startDOY, ndvalue, meantype=None, thresh=None):
+                  startDOY, ndvalue, bounds, meantype=None, thresh=None):
     #TODO docstrings
 
     valsf = {}
@@ -90,8 +90,7 @@ def process_pixel(bestguess, col, cropname, doyinterval, fitmthd, array, interpo
         valsf[doy] = measured
 
     if hasdata:
-        bnds = ((0.6, 1.4), (0.6, 1.4), (-10, 10))
-        res, transforms, message = find_fit(valsf, interpolatedCurve, bestguess, fitmthd, bounds=bnds, mean=meantype,
+        res, transforms, message = find_fit(valsf, interpolatedCurve, bestguess, fitmthd, bounds=bounds, mean=meantype,
                                             threshold=thresh)
 
         if __debug__:
@@ -109,7 +108,7 @@ def process_pixel(bestguess, col, cropname, doyinterval, fitmthd, array, interpo
     return outarray
 
 
-def process_reference(outputdir, signature, array, imageproperties, startDOY, doyinterval, bestguess, ndvalue,
+def process_reference(outputdir, signature, array, imageproperties, startDOY, doyinterval, bestguess, ndvalue, bounds,
                       meantype=None, subset=None, fitmthd=None, thresh=None):
     #TODO docstrings
 
@@ -132,13 +131,13 @@ def process_reference(outputdir, signature, array, imageproperties, startDOY, do
             for row, col in subset:
                 outarray = process_pixel(bestguess, col, signature.name, doyinterval, fitmthd,
                                          array, interpolatedCurve, outarray,
-                                         row, startDOY, ndvalue, meantype=meantype, thresh=thresh)
+                                         row, startDOY, ndvalue, bounds, meantype=meantype, thresh=thresh)
         else:
             for row in range(0, imageproperties.rows):
                 for col in range(0, imageproperties.cols):
                     outarray = process_pixel(bestguess, col, signature.name, doyinterval,
                                              fitmthd, array, interpolatedCurve, outarray,
-                                             row, startDOY, ndvalue, meantype=meantype, thresh=thresh)
+                                             row, startDOY, ndvalue, bounds, meantype=meantype, thresh=thresh)
 
         #Write output array values to file
         print "Writing {0} output file...".format(signature.name)
@@ -171,7 +170,7 @@ def process_reference(outputdir, signature, array, imageproperties, startDOY, do
 
 def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, startDOY,
                                doyinterval, bestguess, threshold=None, ndvalue=-3000, fitmethod=None, subset=None,
-                               meantype=None, workers=4):
+                               meantype=None, workers=4, timebounds=None, xbounds=None, ybounds=None):
     """
     imagepath = "/Users/phoetrymaster/Documents/School/Geography/Thesis/Data/ARC_Testing/ClipTesting/ENVI_1/test_clip_envi_3.dat"
     outdir = "/Users/phoetrymaster/Documents/School/Geography/Thesis/Data/OutImages/"
@@ -223,6 +222,17 @@ def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, star
 
         array = read_image_into_array(image)  # Read all bands into a 3d array representing the image stack (x, y, time orientation)
 
+        if not timebounds:
+            timebounds = (-10, 10)
+
+        if not xbounds:
+            xbounds = (0.6, 1.4)
+
+        if not ybounds:
+            ybounds = (0.6, 1.4)
+
+        bounds = (xbounds, ybounds, timebounds)
+
         if subset:
             subset = get_px_coords_from_shapefile(imagetoprocess, subset)
 
@@ -232,7 +242,7 @@ def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, star
                                         args=(outputdirectory, signature, array, imageproperties, startDOY, doyinterval,
                                               bestguess, ndvalue),
                                         kwargs={"subset": subset, "fitmthd": fitmethod, "meantype": meantype,
-                                                "thresh": threshold})
+                                                "thresh": threshold, "bounds": bounds})
 
             #TODO: Problem with joining/starting processes--original thread closes before others are completed
 
