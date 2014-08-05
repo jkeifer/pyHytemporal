@@ -58,11 +58,18 @@ def find_fit_prompt(ctx, param, value):
               help="Path to a shapefile to clip the raster. If omitted, entire raster extent will be processed.")
 @click.option('-C', '--cliptopixelextent', nargs=4, type=int, default=None,
               help="Pixel coordinates and number of pixels to clip raster. For example, entering \"2482, 1089, 100, 100\" will create a 100px square image going right and down from pixel 2482, 1089 in the original image.")
+@click.option('--timebounds', nargs=2, type=int, default=None,
+              help="Number of days to allow curve shifting before and after: -10, 10 is default and allows the curve to be shifted 10 days in either direction.")
+@click.option('--xbounds', nargs=2, type=float, default=None,
+              help="Bonds of allowable x-scaling: default is 0.6 and 1.4, allowing the curve to be stretched horizontally between 60% and 140% of initial width.")
+@click.option('--ybounds', nargs=2, type=float, default=None,
+              help="Bonds of allowable y-scaling: default is 0.6 and 1.4, allowing the curve to be stretched vertically between 60% and 140% of initial height.")
 #TODO Add an option to use geographic or pixel extent (done) to clip raster in addition to clip to shape option
 @click.option('-P', '--prompt-mode', is_flag=True, is_eager=True, expose_value=False, callback=find_fit_prompt,
               help="Enable prompt mode. This will prompt you for each of the arguments to the function. Use if you aren't good at the command line.")
-def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdoy, doyinterval, temporalshift, threshold,
-             ndvalue, subset, meantype, numberofprocesses, cliptopixelextent, cliptoshapeextent):
+def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdoy, doyinterval, temporalshift,
+             threshold, ndvalue, subset, meantype, numberofprocesses, cliptopixelextent, cliptoshapeextent, timebounds,
+             xbounds, ybounds):
     """
     Fit the fit of reference temporal signatures to pixels in a multidate image.
     """
@@ -101,7 +108,7 @@ def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdo
 
     fit_refs_to_image(imagetoprocess, outdir, signatures, startdoy, doyinterval,
                                temporalshift, threshold=threshold, ndvalue=ndvalue, subset=subset, meantype=meantype,
-                               workers=numberofprocesses)
+                               workers=numberofprocesses, timebounds=timebounds, xbounds=xbounds, ybounds=ybounds)
 
 
 @click.command()
