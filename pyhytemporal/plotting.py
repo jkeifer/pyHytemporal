@@ -2,7 +2,6 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib import rc
 from matplotlib.backends.backend_pdf import PdfPages
-#from core import signatureCollection, temporalSignature
 
 font = {'family' : 'normal',
         'weight' : 'bold',
@@ -45,8 +44,8 @@ class Plot(object):
     def close_plot(self):
         try:
             self.close_figure()
-        except FigureError as e:
-            print(e)
+        except FigureError:
+            pass
 
         self.pdf.close()
 
@@ -61,6 +60,7 @@ class Plot(object):
             if save:
                 self.pdf.savefig()
             plt.close(self.figure)
+            self.figure = None
         else:
             raise FigureError("Error: no figure is open. Cannot close nothing.")
 
@@ -75,23 +75,24 @@ class PixelPlot(Plot):
     def add_pixel(self, pixelObject, color=None, closefigure=False):
 
         if color:
-            color = '{0}-'.format(color)
+            color = '{0}'.format(color)
         elif color is None and pixelObject.color:
-            color = '{0}-'.format(pixelObject.color)
+            color = '{0}'.format(pixelObject.color)
         else:
-            color = "black-"
+            color = "black"
 
         try:
             self.create_figure()
         except FigureError:
             pass
 
-        axes = self.figure.add_subplot(0.5, 0.5, 0.5)
-        axes.plot(pixelObject.values, pixelObject.bandDOYs, color)
+        axes = self.figure.add_subplot(1, 1, 1)
+        print("Plotting {0}, {1}".format(pixelObject.values, pixelObject.bandDOYs))
+        axes.plot(pixelObject.bandDOYs, pixelObject.values, color=color, linestyle='-')
         axes.set_xlabel("Pixel row {0} col {1}: {2} as {3} in classified".format(pixelObject.row,
                                                                                  pixelObject.col,
                                                                                  pixelObject.actualclass,
-                                                                                 pixelObject.classifiedclass))
+                                                                                 pixelObject.classificationclass))
         if closefigure is True:
             self.close_figure()
 
