@@ -129,9 +129,13 @@ def process_reference(outputdir, signature, array, imageproperties, startDOY, do
         #Iterate through each pixel and calculate the fit for each ref curve; write RMSE to array
         if subset:
             for row, col in subset:
-                outarray = process_pixel(bestguess, col, signature.name, doyinterval, fitmthd,
-                                         array, interpolatedCurve, outarray,
-                                         row, startDOY, ndvalue, bounds, meantype=meantype, thresh=thresh)
+                if row < 0 or col < 0 or row >= imageproperties.rows or col >= imageproperties.cols:
+                    #print("Pixel not in processing extent; skipping.")
+                    pass
+                else:
+                    outarray = process_pixel(bestguess, col, signature.name, doyinterval, fitmthd,
+                                            array, interpolatedCurve, outarray,
+                                            row, startDOY, ndvalue, bounds, meantype=meantype, thresh=thresh)
         else:
             for row in range(0, imageproperties.rows):
                 for col in range(0, imageproperties.cols):
