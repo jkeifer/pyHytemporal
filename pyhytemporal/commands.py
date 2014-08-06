@@ -255,13 +255,13 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
 @click.option('-i', '--multidateraster', type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True,
                                                resolve_path=True),
               required=True, help="Path to the multidate raster file.")
-@click.option('-f', '--shapefile', type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True,
+@click.option('-p', '--pointfile', type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True,
                                                 resolve_path=True), default=None, required=True,
               help="Path to a point shapefile containing the points to be plotted")
 @click.option('-s', '--startDOY', type=click.INT, help="The start DOY for the multidate image.", required=True)
-@click.option('-d', '-DOYinterval', type=click.INT, help="The interval of the imagery in the multidate image.",
+@click.option('-d', '--DOYinterval', type=click.INT, help="The interval of the imagery in the multidate image.",
               required=True)
-def plot_points(shapefile, multidateraster, startDOY, DOYinterval):
+def plot_points(multidateraster, pointfile, startdoy, doyinterval):
     """
 
     """
@@ -274,14 +274,14 @@ def plot_points(shapefile, multidateraster, startDOY, DOYinterval):
 
     outpath = unique_name(os.path.dirname(multidateraster), "plots", usetime=True)
 
-    coords = get_px_coords_from_shapefile(shapefile, multidateraster)
+    coords = get_px_coords_from_shapefile(multidateraster, pointfile)
 
     plot = PixelPlot(os.path.dirname(outpath), os.path.basename(outpath))
     raster = openImage(multidateraster)
 
     for coord in coords:
         pixel = pixelObject(coord[0], coord[1])
-        pixel.get_pixel_values(raster, startDOY, DOYinterval)
+        pixel.get_pixel_values(raster, startdoy, doyinterval)
         plot.add_pixel(pixel, closefigure=True)
 
     plot.close_plot()
