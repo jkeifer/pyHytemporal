@@ -464,7 +464,7 @@ class pixel(object):
             self.values = []
             for bandnumber in range(1, bands + 1):
                 band = gdalImage.GetRasterBand(bandnumber)
-                self.values.append(band.ReadAsArray(self.col, self.row, 1, 1))
+                self.values.append(int((band.ReadAsArray(self.col, self.row, 1, 1))))
 
     def get_bandDOYs(self, numberofbands, startDOY, imageryinterval, force=None):
         if self.bandDOYs is None or force == True:
