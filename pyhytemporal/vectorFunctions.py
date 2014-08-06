@@ -116,7 +116,7 @@ def validateShapeData(shapeData):
     # Make sure the shapefile exists
     if not shapeData:
         raise ShapeDataError('The shapefile is invalid')
-        # Make sure there is exactly one layer
+    # Make sure there is exactly one layer
     if shapeData.GetLayerCount() != 1:
         raise ShapeDataError('The shapefile must have exactly one layer')
 
