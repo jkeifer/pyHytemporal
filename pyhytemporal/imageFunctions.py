@@ -175,33 +175,19 @@ def clip_and_mask_raster_with_shapefile(inraster, shapefile, outraster):
 
     raster = openImage(inraster)
     raster_properties = gdalProperties(raster)
-    print 2
 
     rasterwkt = raster.GetProjectionRef()
 
     oSRSop = osr.SpatialReference()
     oSRSop.ImportFromWkt(rasterwkt)
-    print oSRSop
-    print 3
 
     shpextent, shppoints = read_shapefile_to_points(shapefile, oSRSop)
-    print 4
 
-    print shppoints
-    print shppoints.GetPointCount()
     points = []
     for p in xrange(shppoints.GetPointCount()):
         points.append(shppoints.GetPoint(p))
 
-    print points
-
-    print 5
     pnts = numpy.array(points).transpose()
-    print pnts
-    #pnts_min_x = numpy.min(pnts[0])
-    #pnts_max_x = numpy.max(pnts[0])
-    #pnts_min_y = numpy.min(pnts[1])
-    #pnts_max_y = numpy.max(pnts[1])
 
     cornerpnts = [(shpextent[0], shpextent[3]),  # top left
                   (shpextent[1], shpextent[2])]  # bottom right
@@ -209,16 +195,13 @@ def clip_and_mask_raster_with_shapefile(inraster, shapefile, outraster):
     # TODO change this to use the function from vectorFunctions
     pixel, line = world2Pixel(raster_properties.geotransform, pnts[0], pnts[1])
 
-    print 5
     rasterPoly = Image.new("L", (raster.RasterXSize, raster.RasterYSize), 1)
     rasterize = ImageDraw.Draw(rasterPoly)
     listdata = [(pixel[i], line[i]) for i in xrange(len(pixel))]
     rasterize.polygon(listdata, 0)
     mask = 1 - PIL_image_to_array(rasterPoly)
-    print 6
 
     # find extent of new image by getting corner coords in image and subtract mins from maxes
-
     pxcoords = get_px_coords_from_geographic_coords(raster_properties, cornerpnts)
 
     ymin, xmin = pxcoords[0]
@@ -229,12 +212,8 @@ def clip_and_mask_raster_with_shapefile(inraster, shapefile, outraster):
 
     geotransform_coords = get_geographic_coords_from_px_coords(raster_properties, [pxcoords[0]])[0]
 
-    print(shpextent)
-    print geotransform_coords
     newgeotransform = list(raster_properties.geotransform)
     newgeotransform[0], newgeotransform[3] = geotransform_coords[0], geotransform_coords[1]
-    print(raster_properties.geotransform)
-    print(newgeotransform)
 
     outds = copySchemaToNewImage(raster_properties, outraster, cols=xextent, rows=yextent, geotransform=newgeotransform)
 
