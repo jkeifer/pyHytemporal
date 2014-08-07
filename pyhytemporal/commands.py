@@ -66,7 +66,7 @@ def find_fit_prompt(ctx, param, value):
               help="Bonds of allowable y-scaling: default is 0.6 and 1.4, allowing the curve to be stretched vertically between 60% and 140% of initial height.")
 #TODO Add an option to use geographic or pixel extent (done) to clip raster in addition to clip to shape option
 @click.option('-P', '--prompt-mode', is_flag=True, is_eager=True, expose_value=False, callback=find_fit_prompt,
-              help="Enable prompt mode. This will prompt you for each of the arguments to the function. Use if you aren't good at the command line.")
+              help="**CURRENTLY DISABLED** Enable prompt mode. This will prompt you for each of the arguments to the function. Use if you aren't good at the command line.")
 def find_fit(vi, signaturedirectory, image, outputdir, outputfoldername, startdoy, doyinterval, temporalshift,
              threshold, ndvalue, subset, meantype, numberofprocesses, cliptopixelextent, cliptoshapeextent, timebounds,
              xbounds, ybounds):
