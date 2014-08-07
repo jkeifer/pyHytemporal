@@ -225,6 +225,7 @@ def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, star
                                                                                                   imageproperties.bands)
 
         array = read_image_into_array(image)  # Read all bands into a 3d array representing the image stack (x, y, time orientation)
+        image = ""
 
         if timebounds:
             timebounds = (bestguess + timebounds[0], bestguess + timebounds[1])
@@ -256,12 +257,13 @@ def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, star
             p.start()
             processes.append(p)
 
-            if len(processes) == workers or signum == len(signaturecollection.signatures):
+            if len(processes) == workers:
                 for p in processes:
                     p.join()
                     processes.remove(p)
 
-        print dt.now() - start
+        for p in processes:
+                    p.join()
 
     except Exception as e:
         import traceback
@@ -271,8 +273,3 @@ def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, star
 
     finally:
         print dt.now() - start
-        print "\nClosing file..."
-        try:
-            image = None
-        except:
-            pass
