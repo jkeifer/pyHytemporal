@@ -226,8 +226,10 @@ def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, star
 
         array = read_image_into_array(image)  # Read all bands into a 3d array representing the image stack (x, y, time orientation)
 
-        if not timebounds:
-            timebounds = (-10, 10)
+        if timebounds:
+            timebounds = (bestguess + timebounds[0], bestguess + timebounds[1])
+        else:
+            timebounds = (bestguess - 10, bestguess + 10)
 
         if not xbounds:
             xbounds = (0.6, 1.4)
@@ -236,24 +238,25 @@ def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, star
             ybounds = (0.6, 1.4)
 
         bounds = (xbounds, ybounds, timebounds)
+        print(bounds)
 
         if subset:
             subset = get_px_coords_from_shapefile(imagetoprocess, subset)
 
         processes = []
-        for signature in signaturecollection.signatures:
+        for signum, signature in enumerate(signaturecollection.signatures, start=1):
             p = multiprocessing.Process(target=process_reference,
                                         args=(outputdirectory, signature, array, imageproperties, startDOY, doyinterval,
                                               bestguess, ndvalue),
                                         kwargs={"subset": subset, "fitmthd": fitmethod, "meantype": meantype,
                                                 "thresh": threshold, "bounds": bounds})
 
-            #TODO: Problem with joining/starting processes--original thread closes before others are completed
+            #TODO: Problem with joining/starting processes--original thread closes before others are completed -- believe this is now fixed.
 
             p.start()
             processes.append(p)
 
-            if len(processes) == workers:
+            if len(processes) == workers or signum == len(signaturecollection.signatures):
                 for p in processes:
                     p.join()
                     processes.remove(p)
