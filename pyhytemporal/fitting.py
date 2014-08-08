@@ -1,3 +1,4 @@
+from __future__ import print_function
 from datetime import datetime as dt
 import multiprocessing
 import os
@@ -6,8 +7,13 @@ import numpy
 from scipy import interpolate, optimize
 from core import gdalProperties
 from imageFunctions import copySchemaToNewImage, openImage, read_image_into_array
-from utils import band_number_to_doy
+from utils import band_number_to_doy, log
 from vectorFunctions import get_px_coords_from_shapefile
+from constants import *
+
+
+#Logging level
+LOGGINGLEVEL = INFO
 
 
 def get_sort_dates_values(vals, threshold=None):
@@ -69,19 +75,25 @@ def find_fit(valsf, interpolatedreferencecurve, bestguess, fitmethod=None, bound
 
 
 def process_pixel(bestguess, col, cropname, doyinterval, fitmthd, array, interpolatedCurve, outarray, row,
-                  startDOY, ndvalue, bounds, meantype=None, thresh=None):
+                  startDOY, ndvalue, bounds, meantype=None, thresh=None, logging=None):
     #TODO docstrings
+
+    logf = print
+
+    if logging:
+        try:
+            logf = logging.log
+        except:
+            pass
+
 
     valsf = {}
     hasdata = True
 
     pixel = array[row, col]
-    #print pixel
-    #print pixel.size
 
     for i in range(pixel.size):
         measured = pixel[i]
-        #print(measured, col, row, i + 1)
 
         if measured == ndvalue:
             hasdata = False
@@ -93,13 +105,10 @@ def process_pixel(bestguess, col, cropname, doyinterval, fitmthd, array, interpo
         res, transforms, message = find_fit(valsf, interpolatedCurve, bestguess, fitmthd, bounds=bounds, mean=meantype,
                                             threshold=thresh)
 
-        if __debug__:
-            print "\tPixel r{0}, c{1}: {2}: {3}, {4}, {5}".format(row, col, cropname, res, transforms, message)
+        logf("\tPixel r{0}, c{1}: {2}: {3}, {4}, {5}".format(row, col, cropname, res, transforms, message))
 
     else:
-
-        if __debug__:
-            "\tPixel r{0}, c{1}: {2}: NO DATA.".format(row, col, cropname)
+        logf("\tPixel r{0}, c{1}: {2}: NO DATA.".format(row, col, cropname))
 
         res = ndvalue
 
@@ -112,15 +121,19 @@ def process_reference(outputdir, signature, array, imageproperties, startDOY, do
                       meantype=None, subset=None, fitmthd=None, thresh=None):
     #TODO docstrings
 
+    outfileName = os.path.join(outputdir, signature.name) + ".tif"
+    logfilename = os.path.join(outputdir, signature.name) + ".txt"
+    reflog = log(logfilename, verbosity=LOGGINGLEVEL)
+
     try:
         #Create output rasters for each crop type to hold residual values from fit and arrays
-        print "Creating {0} output raster...".format(signature.name)
+        reflog.log("Creating {0} output raster...".format(signature.name))
         outfileName = os.path.join(outputdir, signature.name) + ".tif"
         outfile = copySchemaToNewImage(imageproperties, outfileName, numberofbands=1)
         outdataset = outfile.GetRasterBand(1)
         outarray = numpy.zeros(shape=(imageproperties.rows, imageproperties.cols))
         outarray[outarray == 0] = ndvalue
-        print "Created {0} raster.".format(signature.name)
+        reflog.log("Created {0} raster.".format(signature.name))
 
 
         #Interpolate reference values and return dict with key as type and curve as value
@@ -135,33 +148,36 @@ def process_reference(outputdir, signature, array, imageproperties, startDOY, do
                 else:
                     outarray = process_pixel(bestguess, col, signature.name, doyinterval, fitmthd,
                                             array, interpolatedCurve, outarray,
-                                            row, startDOY, ndvalue, bounds, meantype=meantype, thresh=thresh)
+                                            row, startDOY, ndvalue, bounds,
+                                            meantype=meantype, thresh=thresh, logging=reflog)
         else:
             for row in range(0, imageproperties.rows):
                 for col in range(0, imageproperties.cols):
                     outarray = process_pixel(bestguess, col, signature.name, doyinterval,
                                              fitmthd, array, interpolatedCurve, outarray,
-                                             row, startDOY, ndvalue, bounds, meantype=meantype, thresh=thresh)
+                                             row, startDOY, ndvalue, bounds,
+                                             meantype=meantype, thresh=thresh, logging=reflog)
 
         #Write output array values to file
-        print "Writing {0} output file...".format(signature.name)
+        reflog.log("Writing {0} output file...".format(signature.name))
         outdataset.WriteArray(outarray, 0, 0)
         outdataset.SetNoDataValue(ndvalue)
 
-        print "\nProcessing {0} finished.".format(signature.name)
+        reflog.log("Processing {0} finished.".format(signature.name))
 
     except Exception as e:
         import traceback
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        print e
+        reflog.log(e)
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=reflog.file)
         try:
             print(row, col)
         except:
             pass
 
     finally:
-        print "\nClosing files..."
+        print("\nClosing files...")
         try:
             outdataset = None
         except:
@@ -211,18 +227,18 @@ def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, star
     #TODO docstrings
 
     start = dt.now()
-    print start
+    print(start)
     try:
-        print "\nProcessing {0}...".format(imagetoprocess)
-        print "Outputting files to {0}\n".format(outputdirectory)
+        print("\nProcessing {0}...".format(imagetoprocess))
+        print("Outputting files to {0}\n".format(outputdirectory))
 
         #Open multi-date image to analyze
         image = openImage(imagetoprocess)
         imageproperties = gdalProperties(image)
 
-        print "Input image dimensions are {0} columns by {1} rows and contains {2} bands.".format(imageproperties.cols,
+        print("Input image dimensions are {0} columns by {1} rows and contains {2} bands.".format(imageproperties.cols,
                                                                                                   imageproperties.rows,
-                                                                                                  imageproperties.bands)
+                                                                                                  imageproperties.bands))
 
         array = read_image_into_array(image)  # Read all bands into a 3d array representing the image stack (x, y, time orientation)
         image = ""
@@ -268,8 +284,8 @@ def fit_refs_to_image(imagetoprocess, outputdirectory, signaturecollection, star
     except Exception as e:
         import traceback
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        print e
+        print(e)
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
 
     finally:
-        print dt.now() - start
+        print(dt.now() - start)
