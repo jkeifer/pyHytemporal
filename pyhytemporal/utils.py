@@ -1,4 +1,28 @@
 import os
+from constants import *
+
+class log(object):
+    """
+    Logging utility. Creates a .txt file at init at supplied path. Default verbosity is ERROR (3) which will only allow
+    messages of same or higher level display on screen. All messages, regardless of level, will be written to the .txt
+    file.
+    """
+
+    def __init__(self, txtpath, verbosity=ERROR):
+        self.file = open(txtpath, 'w')
+        self.verbosity = verbosity
+
+    def __del__(self):
+        self.file.close()
+
+    def log(self, message, level=INFO, nolinebreak=False):
+        if nolinebreak:
+            linebreak = ""
+        else:
+            linebreak = "\n"
+        if level >= self.verbosity:
+            print(message)
+        self.file.write(message + linebreak)
 
 
 def find_files(searchdir, ext, recursive=True):
