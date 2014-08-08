@@ -4,8 +4,22 @@ from osgeo import ogr
 from osgeo import osr
 from core import gdalProperties, ShapeDataError
 
+ogr.UseExceptions()
 
-def load_points(shapefile):
+
+def getfieldindex(layer, fieldname):
+    index = None
+    layerdefn = layer.GetLayerDefn()
+
+    for i in xrange(layerdefn.GetFieldCount()):
+        if layerdefn.GetFieldDefn(i).GetName == fieldname:
+            index = i
+            break
+
+    return index
+
+
+def load_points(shapefile, outSpatialRef=None, fieldtoread=None):
     """
     Returns a list of coordinate from points in an input shapefile.
 
@@ -20,25 +34,46 @@ def load_points(shapefile):
     """
     #TODO Clean up commenting
 
+    if outSpatialRef:
+        inSpatialRef = get_ref_from_shapefile(shapefile)
+        coordTrans = osr.CoordinateTransformation(inSpatialRef, outSpatialRef)
+
     # Open shapeData
     shapeData = ogr.Open(validateShapePath(shapefile))
     # Validate shapeData
     validateShapeData(shapeData)
     # Get the first layer
     layer = shapeData.GetLayer()
+
+    # if fieldtoread:
+    #     fieldindex = getfieldindex(fieldtoread)
+    #     if fieldindex is None:
+    #         raise ShapeDataError("fieldtoread was not found in shape data.")
+
     # Initialize
     points = []
     # For each point,
     for index in xrange(layer.GetFeatureCount()):
         # Get
         feature = layer.GetFeature(index)
+
+        if fieldtoread:
+            value = feature.GetField(fieldtoread)
+
         geometry = feature.GetGeometryRef()
+
+        if coordTrans:
+            geometry.Transform(coordTrans)
+
         # Make sure that it is a point
         if geometry.GetGeometryType() != ogr.wkbPoint:
             raise ShapeDataError('This function only accepts point geometry.')
-            # Get pointCoordinates
-        pointCoordinates = geometry.GetX(), geometry.GetY()
-        # Append
+
+        if value:
+            pointCoordinates = geometry.GetX(), geometry.GetY(), value
+        else:
+            pointCoordinates = geometry.GetX(), geometry.GetY()
+
         points.append(pointCoordinates)
         # Cleanup
         feature.Destroy()
@@ -50,6 +85,7 @@ def load_points(shapefile):
 
 def read_shapefile_to_points(shapefile, outSpatialRef=None):
     shapeData = ogr.Open(validateShapePath(shapefile))
+    validateShapeData(shapeData)
 
     layer = shapeData.GetLayer()
 
@@ -191,23 +227,19 @@ def get_px_coords_from_shapefile(raster, shapefile):
 
     from imageFunctions import openImage
 
-    # load points from shapefile and get georef
-    pointcoords = load_points(shapefile)
-    ref1 = get_ref_from_shapefile(shapefile)
-
     # open, close image file and get properties
-    image = openImage(raster)
-    imageproperties = gdalProperties(image)
-    image = ""
+    raster = openImage(raster)
+    imageproperties = gdalProperties(raster)
 
-    # check spatial refs
-    referror = check_spatial_refs(ref1, imageproperties.projection)
+    rasterwkt = raster.GetProjectionRef()
 
-    if referror:
-        print "WARNING: Spatial Reference of raster does not match points shapefile. Output may not be as expected. For best resutls ensure reference systems are identical."
-        #TODO Change to use warnings module
+    oSRSop = osr.SpatialReference()
+    oSRSop.ImportFromWkt(rasterwkt)
+    raster = None
+
+    shppoints = load_points(shapefile, oSRSop)
 
     # get pixel coords from point coords
-    pxcoords = get_px_coords_from_geographic_coords(imageproperties, pointcoords)
+    pxcoords = get_px_coords_from_geographic_coords(imageproperties, shppoints)
 
     return pxcoords
