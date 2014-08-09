@@ -232,6 +232,7 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
                 raise click.BadParameter("Length of threshold in threshold value list is not the same as the number of fit rasters. Counts must be equal.")
             else:
                 pass
+        thresholds = (thresholds, len(thresholds))
     elif tstart and tstepcount and tstep:
         # create threshold generator
         if nocombo:
@@ -239,8 +240,9 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
             for val in range(tstart, (tstepcount * tstep + tstart), tstep):
                 threshtemp = [val for item in filevallist]
                 thresholds.append(threshtemp)
+            thresholds = (thresholds, len(thresholds))
         else:
-            thresholds = generate_thresholds(tstart, tstep, tstepcount, len(filevallist))
+            thresholds = (generate_thresholds(tstart, tstep, tstepcount, len(filevallist)), tstepcount**len(filevallist))
     else:
         raise click.BadParameter("Threshold options incomplete or otherwise incorrectly used.")
 
