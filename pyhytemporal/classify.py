@@ -10,7 +10,7 @@ from imageFunctions import openImage, read_image_into_array, copySchemaToNewImag
 
 OTHER_VALUE = 0
 
-def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, filevalist, nodata, thresholdlist,
+def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, filevalist, nodata, thresholdsandlength,
                                  classifiedimagename=None, numberofprocesses=4):
     """
     """
@@ -40,8 +40,10 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
     bestacc = 0
     bestthresh = None
 
+    thresholdlist, lengthofthresholdlist = thresholdsandlength
+
     try:
-        if len(thresholdlist) == 1:
+        if lengthofthresholdlist == 1:
             writestring = "\n\n**Only using a single threshold value--not iterating.**\n\n"
             bestthresh = thresholdlist[0]
         else:
@@ -49,8 +51,8 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
             #TODO: Refactor to allow use of multiprocessing.Pool.map -- need to reason about the output/logging
             for thresh in thresholdlist:
                 start = dt.now()
-                accuracy, classification, outstring = classify_with_threshold(croparray, arraylist,
-                                                                              searchstringsvals, thresh, nodata)
+                accuracy, classification, outstring = classify_with_threshold(croparray, arraylist, searchstringsvals,
+                                                                              thresh, nodata, cropimgproperties.nodata)
                 writestring = writestring + outstring
 
                 if accuracy > bestacc:
@@ -70,15 +72,14 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
 
     finally:
-
-        accuracy, classificationarray, outstring = classify_with_threshold(croparray, arraylist,
-                                                                      searchstringsvals, bestthresh, nodata)
+        accuracy, classificationarray, outstring = classify_with_threshold(croparray, arraylist, searchstringsvals,
+                                                                           bestthresh, nodata, cropimgproperties.nodata)
 
         writestring = writestring + outstring
 
-        accuracyarray = find_correct_incorrect_array(croparray, classificationarray, ndvalue=nodata)
+        accuracyarray = find_correct_incorrect_array(croparray, classificationarray, ndvalue=nodata,
+                                                     truthndvalue=cropimgproperties.nodata)
 
-        # TODO: This repeat smells. Fix it.
         with open(accuracyreport, 'w') as text:
             text.write("Classification using fit images from {0}".format(os.path.dirname(filevalist[0][0])))
             text.write("{0}\nBest:\n{1} {2}".format(writestring, bestthresh, accuracy))
@@ -96,7 +97,7 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
         return 0
 
 
-def classify_with_threshold(croparray, arraylist, searchstringsvals, thresh, nodata):
+def classify_with_threshold(croparray, arraylist, searchstringsvals, thresh, nodata, cropnodata):
     """
     """
     #TODO DOCSTRING
@@ -152,13 +153,19 @@ def classify_with_threshold(croparray, arraylist, searchstringsvals, thresh, nod
     classification = classification.__or__(nodataarray)
 
     #Accuracy Assessment
+    # accuracyarray = find_correct_incorrect_array(croparray, classification, ndvalue=nodata)
+    # correctarray = accuracyarray.__mul__(classification)
+    # incorrectarray = (1 - accuracyarray).__mul__(classification)
+
     results = {}
     for string, val in searchstringsvals:
         searchdict = {}
         temparray = numpy.copy(classification)
+        tempcroparray = numpy.copy(croparray)
         temparray[temparray != val] = 0
-        correct = temparray.__eq__(croparray)
-        incorrect = temparray.__ne__(croparray)
+        tempcroparray[tempcroparray == cropnodata] = 0
+        correct = temparray.__eq__(tempcroparray)
+        incorrect = temparray.__ne__(tempcroparray)
         temparray[temparray == val] = 1
         incorrectvals = incorrect.__mul__(croparray).__mul__(temparray)
         for string2, val2 in searchstringsvals:
@@ -213,15 +220,13 @@ def classify_with_threshold(croparray, arraylist, searchstringsvals, thresh, nod
     return accuracy, classification, outstring
 
 
-def find_correct_incorrect_array(trutharray, classificationarray, ndvalue=-3000):
+def find_correct_incorrect_array(trutharray, classificationarray, ndvalue=-3000, truthndvalue=None):
     uniquevals = set(numpy.unique(classificationarray))
-
-    print uniquevals
 
     if OTHER_VALUE in uniquevals:
         uniquevals.remove(OTHER_VALUE)
 
-    if ndvalue in uniquevals:
+    if truthndvalue in uniquevals:
         uniquevals.remove(ndvalue)
 
     accuracyarray = numpy.array(classificationarray.__eq__(trutharray), dtype=numpy.int_)  # sets acc array to 1 where equal, 0 where not
@@ -234,7 +239,9 @@ def find_correct_incorrect_array(trutharray, classificationarray, ndvalue=-3000)
     accuracyarray[otherarray == 1] = 1   # where classified is other and truth is other, set to correct (1)
 
     accuracyarray[classificationarray == ndvalue] = ndvalue  # where classification contains nodata, set acc to nodata
-    accuracyarray[trutharray == ndvalue] = ndvalue  # where trutharray contains nodata, set acc to nodata
+
+    if truthndvalue:
+        accuracyarray[trutharray == truthndvalue] = ndvalue  # where trutharray contains nodata, set acc to nodata
 
     return accuracyarray
 
