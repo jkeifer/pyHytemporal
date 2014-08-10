@@ -308,7 +308,14 @@ def plot_sigs(signaturedirectory, outputdirectory, name):
     from core import signatureCollection
     from plotting import SignaturePlot
 
-    sigs = find_files(signaturedirectory, "mean.sig")
+    if not outputdirectory:
+        outputdirectory = signaturedirectory
+
+    sigs = find_files(signaturedirectory, "mean.ref")
+
+    if not sigs:
+        click.BadParameter("Did not find any signature files in the specified directory.")
+
     signatures = signatureCollection()
 
     for sig in sigs:
