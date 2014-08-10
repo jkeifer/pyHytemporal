@@ -331,7 +331,6 @@ def plot_sigs(signaturedirectory, outputdirectory, name):
 
     plot = SignaturePlot(outputdirectory, os.path.basename(path))
     plot.plot_collection(signatures)
-    plot.close_plot()
 
 
 cli.add_command(find_fit)
