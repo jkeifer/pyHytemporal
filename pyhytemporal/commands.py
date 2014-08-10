@@ -274,7 +274,7 @@ def plot_points(multidateraster, pointfile, startdoy, doyinterval):
     from vectorFunctions import get_px_coords_from_shapefile
     from imageFunctions import openImage
 
-    outpath = unique_name(os.path.dirname(multidateraster), "plots", usetime=True)
+    outpath = unique_name(os.path.dirname(multidateraster), "plots", ext=".pdf", usetime=True)
 
     coords = get_px_coords_from_shapefile(multidateraster, pointfile)
 
@@ -328,7 +328,7 @@ def plot_sigs(signaturedirectory, outputdirectory, name):
 
     name, ext = os.path.splitext(name)
     path = unique_name(outputdirectory, name, ext=ext)
-
+    print(path)
     plot = SignaturePlot(outputdirectory, os.path.basename(path))
     plot.plot_collection(signatures)
 
