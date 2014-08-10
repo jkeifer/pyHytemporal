@@ -35,9 +35,9 @@ def plot_color_picker(i):
 
 
 class Plot(object):
-    def __init__(self, outputpath, name):
+    def __init__(self, outputpath, namewithext):
         #TODO: Validate Directory
-        self.pdf = PdfPages(os.path.join(outputpath, name + ".pdf"))
+        self.pdf = PdfPages(os.path.join(outputpath, namewithext))
         self.figure = None
         self.lines = []
 
