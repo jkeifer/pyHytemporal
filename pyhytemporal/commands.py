@@ -297,8 +297,8 @@ def plot_points(multidateraster, pointfile, startdoy, doyinterval):
 @click.option('-o', '--outputdirectory', type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True,
                                                    readable=True, resolve_path=True),
               default=None, help="Path to the output directory. Default is to use the directory containing the signatures.")
-@click.option('-n', '--name', type=click.STRING, default='signatures',
-              help="Name of the image to be created with the file extension. Default is 'multidate_image.tif'.")
+@click.option('-n', '--name', type=click.STRING, default='signatures.pdf',
+              help="Name of the plot pdf to be created with the file extension. Default is 'signatures.pdf'.")
 def plot_sigs(signaturedirectory, outputdirectory, name):
     """
 
@@ -319,7 +319,8 @@ def plot_sigs(signaturedirectory, outputdirectory, name):
 
         #TODO Fix core temporalSignature to use exceptions so they can be properly handled here
 
-    path = unique_name(outputdirectory, name, ext='.pdf')
+    name, ext = os.path.splitext(name)
+    path = unique_name(outputdirectory, name, ext=ext)
 
     plot = SignaturePlot(outputdirectory, os.path.basename(path))
     plot.plot_collection(signatures)
