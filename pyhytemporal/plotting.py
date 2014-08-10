@@ -108,7 +108,6 @@ class SignaturePlot(Plot):
         except FigureError:
             pass
 
-        print color
         axes = self.figure.add_subplot(1, 1, 1)
         self.lines.append(axes.plot(temporalSignature.daysofyear, temporalSignature.vivalues,
                                     color=color, linestyle='-', label=temporalSignature.name))
