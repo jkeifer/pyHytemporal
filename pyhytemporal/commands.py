@@ -290,11 +290,48 @@ def plot_points(multidateraster, pointfile, startdoy, doyinterval):
     raster = None
 
 
+@click.command()
+@click.option('-j', '--signaturedirectory', type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True,
+                                                            resolve_path=True),
+              required=True, help="Path to the directory containing the temporal signature files to be used.")
+@click.option('-o', '--outputdirectory', type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True,
+                                                   readable=True, resolve_path=True),
+              default=None, help="Path to the output directory. Default is to use the directory containing the signatures.")
+@click.option('-n', '--name', type=click.STRING, default='signatures',
+              help="Name of the image to be created with the file extension. Default is 'multidate_image.tif'.")
+def plot_sigs(signaturedirectory, outputdirectory, name):
+    """
+
+    """
+    import os
+    from utils import find_files, unique_name
+    from core import signatureCollection
+    from plotting import SignaturePlot
+
+    sigs = find_files(signaturedirectory, "mean.sig")
+    signatures = signatureCollection()
+
+    for sig in sigs:
+        try:
+            signatures.add(sig)
+        except Exception as e:
+            print e
+
+        #TODO Fix core temporalSignature to use exceptions so they can be properly handled here
+
+    path = unique_name(outputdirectory, name, ext='.pdf')
+
+    plot = SignaturePlot(outputdirectory, os.path.basename(path))
+    plot.plot_collection(signatures)
+    plot.close_plot()
+
+
 cli.add_command(find_fit)
 cli.add_command(build_multidate_image)
 cli.add_command(extract_signatures)
 cli.add_command(classify)
 cli.add_command(plot_points)
+cli.add_command(plot_sigs)
 
 if __name__ == '__main__':
     cli()
