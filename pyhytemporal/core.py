@@ -418,6 +418,8 @@ class temporalSignature(object):
 
         self.name = signaturename
 
+        #TODO Need to raise an exception if not formatted properly
+
         daysofyear, vivalues = [], []
         with open(reffilepath, "r") as f:
             for line in f:
