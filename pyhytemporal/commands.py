@@ -328,7 +328,9 @@ def plot_sigs(signaturedirectory, outputdirectory, name):
 
     name, ext = os.path.splitext(name)
     path = unique_name(outputdirectory, name, ext=ext)
-    print(path)
+
+    print("Outputting to {0}".format(path))
+
     plot = SignaturePlot(outputdirectory, os.path.basename(path))
     plot.plot_collection(signatures)
 
