@@ -33,6 +33,7 @@ def load_points(shapefile, outSpatialRef=None, fieldtoread=None):
         - points: A list of tuples with the x, y coords for each point in the input shapefile
     """
     #TODO Clean up commenting
+    value = None  # to prevent reference before assignment
 
     if outSpatialRef:
         inSpatialRef = get_ref_from_shapefile(shapefile)
