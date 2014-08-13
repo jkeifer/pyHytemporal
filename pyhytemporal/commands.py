@@ -153,8 +153,6 @@ def build_multidate_image(imagedirectory, outputimagename, outputdir, outputfold
               required=True)
 @click.option('-l', '--filelabel', type=click.STRING, default="",
               help="A label to postfix on each of the .ref file names")
-@click.option('-l', '--filelabel', type=click.STRING, default="",
-              help="A label to postfix on each of the .ref file names")
 @click.option('-p', '--plotsigs', is_flag=True,
               help="Create a pdf plot of all the generated signatures.")
 def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputdir, filelabel, plotsigs):
@@ -164,7 +162,7 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
     """
     import os
     from plotting import SignaturePlot
-    from utils import find_files, create_output_dir
+    from utils import find_files, create_output_dir, unique_name
     from signatureFunctions import get_sigs_in_dir, get_reference_curves
 
     if outputdir is None:
@@ -177,8 +175,9 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
     get_reference_curves(image, shapefiles, startdoy, doyinterval, outdir=outputdir, filepostfix=filelabel)
 
     if plotsigs:
+        path = unique_name(outputdir, "signaturePlot", ext=".pdf")
         sigs = get_sigs_in_dir(outputdir)
-        plot = SignaturePlot(outputdir, "signaturePlot")
+        plot = SignaturePlot(outputdir, os.path.basename(path))
         plot.plot_collection(sigs)
 
 
@@ -299,7 +298,9 @@ def plot_points(multidateraster, pointfile, startdoy, doyinterval):
               default=None, help="Path to the output directory. Default is to use the directory containing the signatures.")
 @click.option('-n', '--name', type=click.STRING, default='signatures.pdf',
               help="Name of the plot pdf to be created with the file extension. Default is 'signatures.pdf'.")
-def plot_sigs(signaturedirectory, outputdirectory, name):
+@click.option('-s', '--signaturename', multiple=True,
+              help="The signature name or some other string to search for in the signature directory. If omitted, all mean signatures in the directory will be plotted. This parameter can be used multiple times for multiple sreach strings.")
+def plot_sigs(signaturedirectory, outputdirectory, name, signaturename):
     """
 
     """
@@ -315,6 +316,14 @@ def plot_sigs(signaturedirectory, outputdirectory, name):
 
     if not sigs:
         click.BadParameter("Did not find any signature files in the specified directory.")
+
+    if signaturename:
+        filteredsigs = []
+        for searchstring in signaturename:
+            for sig in sigs:
+                if searchstring.upper() in sig.upper():
+                    filteredsigs.append(sig)
+        sigs = filteredsigs
 
     signatures = signatureCollection()
 
