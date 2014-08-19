@@ -207,8 +207,12 @@ def extract_signatures(image, shapefiledirectory, startdoy, doyinterval, outputd
               help="The number of threshold steps.")
 @click.option('--nocombo', is_flag=True,
               help="Does not find combination of threshold steps, but steps through a single threshold value applied to all fit images.")
+@click.option('-p', '--numberofprocesses', type=click.INT, default=1,
+              help="The max number of processes to spawn at any time. Default is 4. Set lower or higher depending on number of processors/cores in your machine.")
+@click.option('-q', '--chunksize', type=click.INT, default=10000,
+              help="The max number of thresholds to be assigned to a given process.")
 def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimagename, valueofcropinimage, tstart, tstep,
-             tstepcount, nocombo, thresholds):
+             tstepcount, nocombo, thresholds, numberofprocesses, chunksize):
     """
     Classify a multidate image and assess the accuracy of said classification.
     """
@@ -216,7 +220,8 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
     # import required functions
     import os
     from utils import create_output_dir
-    from classify import classify_and_assess_accuracy, generate_thresholds, get_fit_rasters
+    from classify import classify_and_assess_accuracy, generate_thresholds, get_fit_rasters, chunks
+    import multiprocessing
 
     # get the fit rasters to use
     filevallist = get_fit_rasters(fitimagedirectory, valueofcropinimage)
@@ -241,15 +246,48 @@ def classify(fitimagedirectory, cropimage, outputdirectory, ndvalue, outputimage
                 thresholds.append(threshtemp)
             thresholds = (thresholds, len(thresholds))
         else:
-            thresholds = (generate_thresholds(tstart, tstep, tstepcount, len(filevallist)), tstepcount**len(filevallist))
+            thresholds = (generate_thresholds(tstart, tstep, tstepcount, len(filevallist)),
+                          tstepcount**len(filevallist))
     else:
         raise click.BadParameter("Threshold options incomplete or otherwise incorrectly used.")
 
     if outputdirectory is None:
         outputdirectory = create_output_dir(os.path.dirname(fitimagedirectory), "classification", usetime=True)
 
-    classify_and_assess_accuracy(outputdirectory, cropimage, valueofcropinimage, filevallist, ndvalue, thresholds,
-                                 classifiedimagename=outputimagename)
+    if numberofprocesses == 1:
+        classify_and_assess_accuracy(outputdirectory, cropimage, valueofcropinimage, filevallist, ndvalue, thresholds,
+                                     classifiedimagename=outputimagename)
+    elif numberofprocesses > 1:
+        processes = []
+        threshlength = thresholds[1]
+        i = 0
+        for chunk in chunks(thresholds[0], size=chunksize):
+
+            if threshlength - chunksize >= 0:
+                threshlength -= chunksize
+                chunk = (chunk, chunksize)
+            else:
+                chunk = (chunk, threshlength)
+
+            processoutput = create_output_dir(outputdirectory, "process_" + str(i))
+            i += 1
+
+            p = multiprocessing.Process(target=classify_and_assess_accuracy,
+                                        args=(processoutput, cropimage, valueofcropinimage, filevallist, ndvalue, chunk),
+                                        kwargs={"classifiedimagename": outputimagename})
+            p.start()
+            processes.append(p)
+
+            if len(processes) == numberofprocesses:
+                for p in processes:
+                    p.join()
+                    processes.remove(p)
+
+        for p in processes:
+            p.join()
+            processes.remove(p)
+    else:
+        click.BadParameter("Number of worker processes must be greater than zero.")
 
 
 @click.command()
