@@ -355,7 +355,7 @@ class signatureCollection(object):
                 signature file.
         """
 
-        newsig = temporalSignature(reffilepath, signaturename)
+        newsig = temporalSignature(signaturename=signaturename, doys=doys, vis=vivalues)
         self.signatures.append(newsig)
 
         return signaturename, newsig.values
