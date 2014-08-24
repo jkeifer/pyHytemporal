@@ -339,6 +339,27 @@ class signatureCollection(object):
 
         return signaturename, newsig.values
 
+    def add_with_values(self, doys, vivalues, signaturename):
+        """
+        Append to the signatures using DOY and VI values in lists.
+
+        Required Argument(s):
+            - doys: DOY values in sequential order
+            - vivalues: VI values in same chronological order
+            - signaturename: This is the name of the signature, i.e. corn. If this is not provided, the reference file's
+                name without the extension will be used.
+
+        Returns:
+            - signaturename
+            - newsig.values: A tuple of tuples representing the DOY and measurment for each of the samples in the
+                signature file.
+        """
+
+        newsig = temporalSignature(reffilepath, signaturename)
+        self.signatures.append(newsig)
+
+        return signaturename, newsig.values
+
     def remove(self, signaturename=None, index=None):
         """
         Removes a signature from the list of signatures. If no arguments are given, nothing will happen. The user must
@@ -400,7 +421,7 @@ class temporalSignature(object):
         - ___init__: Reads an input .ref file, extracts the DOY and VI values, and creates the tuples.
     """
 
-    def __init__(self, reffilepath, signaturename):
+    def __init__(self, reffilepath=None, signaturename=None, doys=None, vis=None):
         """
         Extracts the DOY and VI values to lists, turns the lists to tuples to make them immutable, then adds them as
         properties to the object along with the name of the plant/material, and a tupled zip of the DOY and VI tuples.
@@ -420,23 +441,31 @@ class temporalSignature(object):
 
         #TODO Need to raise an exception if not formatted properly
 
-        daysofyear, vivalues = [], []
-        with open(reffilepath, "r") as f:
-            for line in f:
-                if not line.startswith("/"):
-                    if len(line) >= 2:
-                        doy, vivalue = line.split(" ")
-                        daysofyear.append(int(doy))
-                        vivalues.append(float(vivalue))
-                    else:
-                        # line is not properly formatted
-                        # raise Exception("Reference file is not formatted properly.")
-                        pass
+        if reffilepath:
+            daysofyear, vivalues = [], []
+            with open(reffilepath, "r") as f:
+                for line in f:
+                    if not line.startswith("/"):
+                        if len(line) >= 2:
+                            doy, vivalue = line.split(" ")
+                            daysofyear.append(int(doy))
+                            vivalues.append(float(vivalue))
+                        else:
+                            # line is not properly formatted
+                            # raise Exception("Reference file is not formatted properly.")
+                            pass
 
-        if sorted(daysofyear) != daysofyear:
-            print(sorted(daysofyear))
-            print(daysofyear)
-            raise Exception("Error: dates in reference file are not listed sequentially.")
+            if sorted(daysofyear) != daysofyear:
+                print(sorted(daysofyear))
+                print(daysofyear)
+                raise Exception("Error: dates in reference file are not listed sequentially.")
+
+        else:
+            if doys and vis:
+                daysofyear = doys
+                vivalues = vis
+            else:
+                raise Exception("Error: No ref file or DOY/VI values specified. Nothing to add.")
 
         self.daysofyear = tuple(daysofyear)
         self.vivalues = tuple(vivalues)
