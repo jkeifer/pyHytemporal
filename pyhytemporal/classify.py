@@ -34,11 +34,13 @@ def classify_and_assess_accuracy(outputdir, cropimgpath, searchstringsvals, file
     croparray = read_image_into_array(cropimg)
     cropimg = None
 
-    arraylist = [(read_image_into_array(openImage(f[0])), f[1]) for f in filevalist]
+    arraylist = [(read_image_into_array(openImage(f[0])), f[1]) for f in filevalist]  # fit images with crop vals
 
     writestring = "The fit rasters and truth values used for this classification process are:\n"
     for f in filevalist:
         writestring = writestring + "\t{0}\t{1}\n".format(f[0], f[1])
+
+    writestring = writestring + "\n"
 
     bestacc = 0
     bestthresh = None
@@ -120,7 +122,7 @@ def classify_with_threshold(croparray, arraylist, searchstringsvals, thresh, nod
 
     for array, cropval in arrays:
         ltarrays = []
-        nodataarrays = []
+        nodataarrays = []  #TODO the location of this doesn't seem quite right...shouldn't it be outside the for loop?
         for i in range(len(arrays)):
             if not i == count:
                 # This bit finds the lowest value for each pixel, and something else I can't quite ascertain with the nodata
@@ -133,6 +135,7 @@ def classify_with_threshold(croparray, arraylist, searchstringsvals, thresh, nod
                 nodataarrays.append(ndarray)
         count += 1
 
+        allpxbestfit = None
         for i in range(len(ltarrays)):
             if i == 0:
                 allpxbestfit = numpy.copy(ltarrays[i])
