@@ -120,6 +120,8 @@ class SignaturePlot(Plot):
 
         if insamefigure:
             closefig = False
+        else:
+            closefig = True
 
         for i, signature in enumerate(signatureCollection.signatures):
             color = plot_color_picker(i)
